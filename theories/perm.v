@@ -1,5 +1,5 @@
 From stdpp Require Import list.
-Require Export name.
+Require Export Name.
 
 Open Scope nominal_scope.
 
@@ -52,7 +52,7 @@ Notation "(-)" := reverse (only parsing) : nominal_scope.
 Notation "x - y" := (x + (-y))%nominal : nominal_scope.
 
 (* Permutação identidade *)
-Notation ι := [].
+Notation ι := (@nil swap).
 
 (* Tipo de permutação possui uma noção de ação de permutação. *)
 Class Perm A `{Action A} : Prop := {
@@ -77,6 +77,8 @@ Proof.
   destruct a; unfold equiv, perm_equiv, act, name_action; intros x;
     simpl; repeat case_decide; congruence.
 Qed.
+
+Lemma identity_neq_eq: ι = -ι. Proof. auto. Qed.
 
 (* Propriedades de tipos de permutação *)
 Lemma perm_action_left_inv_eq `{Perm A} (p : perm) (x: A): (-p + p) ∙ x = x.
@@ -172,3 +174,14 @@ Proof with auto.
   - intros ? ? HHH [] [] HH; rewrite HH; unfold act, prod_action; simpl;
       rewrite HHH...
 Qed.
+
+(* Functions *)
+Global Instance fun_action `{Action A, Action B}: Action (A -> B) :=
+  λ p f x, p ∙ (f (-p ∙ x)).
+
+Global Instance fun_perm `{Perm A, Perm B}: Perm (A -> B).
+Proof.
+  repeat split.
+  - intros f. unfold act, fun_action.
+    Unset Printing Notations. setoid_rewrite act_id.
+    setoid_rewrite act_id.

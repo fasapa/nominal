@@ -21,11 +21,8 @@ End Name.
 Global Existing Instances
        Name.eq_dec Name.countable Name.infinite Name.inhabited.
 
-Definition name := Name.t.
-Definition nset := listset name.
-
-Global Opaque name.
-Global Opaque nset.
-
 Declare Scope nominal_scope.
 Delimit Scope nominal_scope with nominal.
+
+Notation name := Name.t.
+Notation nset := (listset name).

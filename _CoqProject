@@ -1,0 +1,11 @@
+-arg -w
+-arg all
+-arg -w
+-arg -disj-pattern-notation
+
+-R theories/ Nominal
+
+theories/Prelude.v
+theories/Group.v
+theories/Name.v
+theories/Perm.v
