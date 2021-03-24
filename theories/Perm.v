@@ -84,4 +84,57 @@ Section PermTypeProperties.
     split; intros A; [apply perm_iff in A; rewrite <-(perm_left_inv y p) | rewrite A]; auto.
   Qed.
 
+  Lemma swap_equiv_neutral a: [(a,a)] ≡ ε.
+  Proof. unfold equiv, perm_equiv, perm_action; intros; simpl; case_decide; auto. Qed.
+
+  Lemma swap_expand (a c b: name):
+    c ≠ a -> c ≠ b -> [(a,c)] ≡@{perm} [(a,b)] + [(b,c)] + [(a,b)].
+  Proof.
+    intros; unfold equiv, perm_equiv, perm_action; intros; simpl; repeat case_decide; subst; congruence.
+  Qed.
+
 End PermTypeProperties.
+
+(* Definition fresh' `{Nominal X} (a: name) (x: X): Prop := *)
+(*   exists c: name, c ∉ (support x) /\ [(a,c)] ∙ x ≡ x. *)
+
+
+(* Proof. intros. Admitted. *)
+
+(* Lemma fresh_support `{Nominal X} (x: X) a: a ∉ support x -> fresh' a x. *)
+(* Proof. intros; exists a; split. *)
+(*        - auto. *)
+(*        - rewrite lolol. apply action_id. *)
+(* Qed. *)
+
+(* Lemma fresh11 `{Nominal X} (x: X): exists a, fresh' a x. *)
+(* Proof. *)
+(*   exists (fresh (support x)), (fresh (support x)); split. *)
+(*   - apply is_fresh. *)
+(*   - rewrite lolol; apply action_id. *)
+(* Qed. *)
+
+(* Theorem some_any `{Nominal X} (x: X) a: *)
+(*   fresh' a x -> (forall c, c ∉ support x -> [(a,c)] ∙ x ≡ x). *)
+(* Proof. *)
+(*   intros Fa ? Sc; apply fresh_support in Fa as [b [HB HA]]. *)
+(*   assert (HH: [(a,c)] ≡ ( [(a,b)] + [(b,c)] + [(a,b)] )). admit. *)
+(*   rewrite HH. rewrite <-2!action_compat, HA. *)
+(*   rewrite (support_spec _ _ b c); auto. *)
+(* Admitted. *)
+
+(*   destruct (decide (c = a)), (decide (c = b)); subst. *)
+(*   - auto. *)
+(*   - rewrite lolol; apply action_id. *)
+(*   - auto. *)
+(*   - assert (HH: [(a,c)] ≡ ( [(a,b)] + [(b,c)] + [(a,b)] )). admit. *)
+(*     rewrite HH. rewrite <-2!action_compat, Hb. *)
+(*     rewrite (support_spec _ _ b c); auto. *)
+(* Admitted. *)
+(*     destruct (c ≡a a), (c ≡a b); subst; auto. *)
+(*   -                             (* c ≡ a /\ c ≢ b *) *)
+(*     apply permt_id. *)
+(*   -                             (* c ≢ a /\ c ≢ b *) *)
+(*     rewrite (equiv1 _ b _); auto. repeat rewrite <- gct_compat. *)
+(*     rewrite Hb. rewrite (supp_spec _ _ b c); auto. *)
+(* Qed. *)

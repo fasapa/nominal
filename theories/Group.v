@@ -49,7 +49,8 @@ Section GroupProperties.
 
   Corollary group_inv_involutive (x: G): x ≡ --x.
   Proof with auto.
-    rewrite <-group_left_id at 1; rewrite <-group_left_inv, <-group_assoc, group_left_inv, group_right_id...
+    rewrite <-group_left_id at 1; rewrite <-group_left_inv, <-group_assoc, group_left_inv, group_right_id;
+      reflexivity.
   Qed.
 
   Corollary inv_neutral: ε ≡@{G} -ε.
@@ -70,7 +71,7 @@ Notation "(∙ x )" := (action x) (only parsing) : nominal_scope.
 Notation "( x ∙)" := (λ y, action y x) (only parsing): nominal_scope.
 
 Section GroupAction.
-  Context A X `{Group A, Action A X, Equiv X, !Equivalence(≡@{X})}.
+  Context A X `{Action A X, Equiv X, !Equivalence(≡@{X})}.
 
   Class GroupAction: Prop := {
     action_id : ∀ (x: X), ε ∙ x ≡@{X} x;

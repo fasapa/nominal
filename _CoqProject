@@ -9,3 +9,4 @@ theories/Prelude.v
 theories/Group.v
 theories/Name.v
 theories/Perm.v
+theories/Nominal.v
