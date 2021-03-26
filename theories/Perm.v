@@ -62,7 +62,7 @@ Qed.
 (** *Permtutation Types *)
 Class PermAction X := action_perm :> Action perm_group X.
 Class Perm X `{XA: PermAction X, Equiv X} : Prop :=
-  perm_type :> @GroupAction perm X _ _ _ _ perm_group (@action_perm X XA) _.
+  perm_type :> GroupAction perm X (ActAX := @action_perm X XA).
 
 (* Permutation types properties *)
 Section PermTypeProperties.

@@ -83,6 +83,7 @@ Section GroupAction.
   }.
 End GroupAction.
 
+Arguments GroupAction (A X) {AEq AN AO AI AG ActAX XEq}: rename.
 Arguments action_compat {A X AEq NA OA IA GA ActAX XEq GActAX}: rename.
 Arguments action_id {A X AEq NA OA IA GA ActAX XEq GActAX}: rename.
 Arguments action_proper {A X AEq NA OA IA GA ActAX XEq GActAX}: rename.
