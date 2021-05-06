@@ -1,13 +1,13 @@
 From stdpp Require Import list.
-From Nominal Require Export Name Group.
+From Nominal Require Export Atom Group.
 
 Notation perm := (list (name * name)).
 
 Definition swap '(a,b) : name -> name :=
   λ c, if decide (a = c) then b else if decide (b = c) then a else c.
 
-Definition perm_action (p: perm): name -> name :=
-  λ a, foldr swap a p.
+Definition perm_action (p: perm): name -> name := 
+  λ a, foldl (λ x y, swap y x) a p.
 
 (* Swap & perm properties *)
 Lemma swap_id (a x: name): swap (a,a) x = x.
@@ -16,75 +16,53 @@ Proof. simpl; case_decide; congruence. Qed.
 Lemma swap_involutive a x: swap a (swap a x) = x.
 Proof. destruct a; simpl; repeat case_decide; congruence. Qed.
 
-Lemma perm_action_app p q x: perm_action (p ++ q) x = perm_action p (perm_action q x).
-Proof. unfold perm_action; rewrite foldr_app; auto. Qed.
+Lemma perm_action_app p q x: perm_action (p ++ q) x = perm_action q (perm_action p x).
+Proof. unfold perm_action. rewrite foldl_app; simpl; auto. Qed.
 
-Lemma perm_action_left_rev p x: perm_action (reverse p) (perm_action p x) = x.
+Lemma perm_action_left_rev p : forall x, perm_action (reverse p) (perm_action p x) = x.
 Proof with auto.
-  induction p.
+  induction p; intros.
+  - simpl...
+  - assert (HH1: ∀ a, a :: p = [a] ++ p)...
+    (* rewrite HH1, reverse_app, reverse_singleton. *)
+    rewrite HH1, reverse_app, reverse_singleton, <-perm_action_app, <-app_assoc, 3?perm_action_app;
+      simpl; rewrite IHp, swap_involutive...
+Qed.
+
+Lemma perm_action_right_rev p x: perm_action p (perm_action (reverse p) x) = x.
+Proof with auto.
+  induction p(* ; intros. *).
   - simpl...
   - assert (HH1: ∀ a, a :: p = [a] ++ p)...
     rewrite HH1, reverse_app, reverse_singleton, <-perm_action_app, <-app_assoc, 3?perm_action_app;
       simpl; rewrite swap_involutive...
 Qed.
 
-Lemma perm_action_right_rev p: forall x, perm_action p (perm_action (reverse p) x) = x.
-Proof with auto.
-  induction p; intros.
-  - simpl...
-  - assert (HH1: ∀ a, a :: p = [a] ++ p)...
-    rewrite HH1, reverse_app, reverse_singleton, <-perm_action_app, <-app_assoc, 3?perm_action_app,
-    IHp; simpl; apply swap_involutive.
-Qed.
-
 (** *Permutation group  *)
-Instance perm_neutral: Neutral perm := @nil (name * name).
-Instance perm_operator: Operator perm := @app (name * name).
-Instance perm_inverse: Inverse perm := @reverse (name * name).
-Instance perm_equiv: Equiv perm := λ p q: perm, ∀ a: name, perm_action p a = perm_action q a.
-Instance perm_equivalence: Equivalence (≡@{perm}).
+#[global] Instance perm_neutral: Neutral perm := @nil (name * name).
+#[global] Instance perm_operator: Operator perm := @app (name * name).
+#[global] Instance perm_inverse: Inverse perm := @reverse (name * name).
+#[global] Instance perm_equiv: Equiv perm :=
+  λ p q: perm, ∀ a: name, perm_action p a = perm_action q a.
+#[global] Instance perm_equivalence: Equivalence (≡@{perm}).
 Proof. repeat split; repeat intro; [symmetry | etransitivity]; eauto. Qed.
 
-Instance perm_group: Group perm.
+#[global] Instance PermGrp: Group perm.
 Proof with auto.
   split; unfold op, perm_operator, neutral, perm_neutral, inv, perm_inverse,
          equiv, perm_equiv in *; repeat intro...
-  - rewrite app_assoc...
-  - rewrite app_nil_r...
-  - rewrite perm_action_app, perm_action_left_rev...
-  - rewrite perm_action_app, perm_action_right_rev...
   - typeclasses eauto.
   - rewrite 2?perm_action_app; do 2 match goal with H : context[_ = _] |- _ => rewrite H end...
   - transitivity (perm_action (reverse y) (perm_action x (perm_action (reverse x) a)));
-      [rewrite H, perm_action_left_rev | rewrite perm_action_right_rev]...
+    [rewrite H, perm_action_left_rev | rewrite perm_action_right_rev]...
+  - rewrite app_assoc...
+  - rewrite app_nil_r...
+  - rewrite perm_action_app, perm_action_right_rev...
+  - rewrite perm_action_app, perm_action_left_rev...
 Qed.
 
-(** *Permtutation Types *)
-Class PermAction X := action_perm :> Action perm_group X.
-Class Perm X `{XA: PermAction X, Equiv X} : Prop :=
-  perm_type :> GroupAction perm X (ActAX := @action_perm X XA).
-
-(* Permutation types properties *)
-Section PermTypeProperties.
-  Context `{Perm X}.
-
-  Lemma perm_left_inv (x: X) p: (-p) ∙ p ∙ x ≡ x.
-  Proof. rewrite action_compat, group_right_inv, action_id; auto. Qed.
-
-  Lemma perm_rigth_inv (x: X) p: p ∙ (-p) ∙ x ≡ x.
-  Proof. rewrite action_compat, group_left_inv, action_id; auto. Qed.
-
-  Lemma perm_iff (x y: X) p: p ∙ x ≡ y <-> x ≡ (-p) ∙ y.
-  Proof.
-    split; intros A; [rewrite <-A, perm_left_inv | rewrite A, perm_rigth_inv]; auto.
-  Qed.
-
-  Lemma perm_inj (x y: X) p: p ∙ x ≡ p ∙ y <-> x ≡ y.
-  Proof.
-    split; intros A; [apply perm_iff in A; rewrite <-(perm_left_inv y p) | rewrite A]; auto.
-  Qed.
-
-  Lemma swap_equiv_neutral a: [(a,a)] ≡ ε.
+Section PermGroupProperties.
+  Lemma swap_equiv_neutral (a : name): [(a,a)] ≡@{perm} ɛ.
   Proof. unfold equiv, perm_equiv, perm_action; intros; simpl; case_decide; auto. Qed.
 
   Lemma swap_expand (a c b: name):
@@ -92,49 +70,41 @@ Section PermTypeProperties.
   Proof.
     intros; unfold equiv, perm_equiv, perm_action; intros; simpl; repeat case_decide; subst; congruence.
   Qed.
+  
+End PermGroupProperties.
 
+(** *Permtutation Types *)
+
+(* Permutation action *)
+Class PAct X := pact :> Action perm X.
+#[global] Hint Mode PAct ! : typeclass_instances.
+(* Instance: Params (@pact) 1 := {}. *)
+
+Section PermType.
+  Context (X : Type) `{PA: PAct X, Equiv X}.
+
+  Class Perm : Prop := 
+    ptype :> GAction perm X (Act := @pact X PA).
+End PermType.
+
+(* Class Perm X `{XA: PermAction X, Equiv X} : Prop :=
+  perm_type :> GAction perm X XA.
+#[global] Hint Mode Perm - - - : typeclass_instances. *)
+
+(* Permutation types properties *)
+Section PermTypeProperties.
+  Context `{Perm X}.
+
+  
 End PermTypeProperties.
 
-(* Definition fresh' `{Nominal X} (a: name) (x: X): Prop := *)
-(*   exists c: name, c ∉ (support x) /\ [(a,c)] ∙ x ≡ x. *)
+(* (** *Equivariant functions  *)
+Class EquivarF A B := equivar: A -> B.
+#[global] Hint Mode EquivarF ! ! : typeclass_instances.
+Infix "~>" := EquivarF (at level 90, right associativity).
 
-
-(* Proof. intros. Admitted. *)
-
-(* Lemma fresh_support `{Nominal X} (x: X) a: a ∉ support x -> fresh' a x. *)
-(* Proof. intros; exists a; split. *)
-(*        - auto. *)
-(*        - rewrite lolol. apply action_id. *)
-(* Qed. *)
-
-(* Lemma fresh11 `{Nominal X} (x: X): exists a, fresh' a x. *)
-(* Proof. *)
-(*   exists (fresh (support x)), (fresh (support x)); split. *)
-(*   - apply is_fresh. *)
-(*   - rewrite lolol; apply action_id. *)
-(* Qed. *)
-
-(* Theorem some_any `{Nominal X} (x: X) a: *)
-(*   fresh' a x -> (forall c, c ∉ support x -> [(a,c)] ∙ x ≡ x). *)
-(* Proof. *)
-(*   intros Fa ? Sc; apply fresh_support in Fa as [b [HB HA]]. *)
-(*   assert (HH: [(a,c)] ≡ ( [(a,b)] + [(b,c)] + [(a,b)] )). admit. *)
-(*   rewrite HH. rewrite <-2!action_compat, HA. *)
-(*   rewrite (support_spec _ _ b c); auto. *)
-(* Admitted. *)
-
-(*   destruct (decide (c = a)), (decide (c = b)); subst. *)
-(*   - auto. *)
-(*   - rewrite lolol; apply action_id. *)
-(*   - auto. *)
-(*   - assert (HH: [(a,c)] ≡ ( [(a,b)] + [(b,c)] + [(a,b)] )). admit. *)
-(*     rewrite HH. rewrite <-2!action_compat, Hb. *)
-(*     rewrite (support_spec _ _ b c); auto. *)
-(* Admitted. *)
-(*     destruct (c ≡a a), (c ≡a b); subst; auto. *)
-(*   -                             (* c ≡ a /\ c ≢ b *) *)
-(*     apply permt_id. *)
-(*   -                             (* c ≢ a /\ c ≢ b *) *)
-(*     rewrite (equiv1 _ b _); auto. repeat rewrite <- gct_compat. *)
-(*     rewrite Hb. rewrite (supp_spec _ _ b c); auto. *)
-(* Qed. *)
+Class Equivariant (A B: Type) `{Perm A, Perm B, A ~> B} := {
+  equivar_proper :> Proper ((≡@{A}) ==> (≡@{B})) equivar;
+  equivariance : forall (p : perm) (a: A), p ∙ (equivar a) ≡@{B} equivar (p ∙ a)
+}.
+ *)
