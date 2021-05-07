@@ -42,6 +42,7 @@ Section GroupDef.
     group_right_inv : ∀ x, x - x ≡@{A} ɛ;
   }.
 End GroupDef.
+Print Group.
 (* #[global] Hint Mode Group ! - - - -: typeclass_instances. *)
 
 Arguments group_assoc {_ _ _ _ _ Grp} : rename.
@@ -72,12 +73,11 @@ Section GroupProperties.
 End GroupProperties.
 
 (* Group Action  *)
-Class Action (* `{Grp: Group A} *) A X := action: A -> X -> X.
+(* Class Action `{Grp: Group A} A X := action: A -> X -> X. *)
+Class Action A X := action: A -> X -> X.
 #[global] Hint Mode Action ! ! : typeclass_instances.
-(*
-CAUSA PROBLEMAS COM REESCRITA ENVOLVENDO action (- p)
-Instance: Params (@action) 2 := {}. 
-*)
+(* CAUSA PROBLEMAS COM REESCRITA ENVOLVENDO action (- p)
+  Instance: Params (@action) 2 := {}. *)
 
 Infix "•" := action (at level 60, right associativity) : nominal_scope.
 Notation "(•)" := action (only parsing) : nominal_scope.
@@ -88,7 +88,7 @@ Notation "( x •)" := (λ y, action y x) (only parsing): nominal_scope.
 Section GroupAction.
   Context (A X: Type) `{Grp: Group A, Act : Action A X, Equiv X}.
 
-  Class GAction: Prop := {
+  Class GAction : Prop := {
     gact_group :> Group A;
     gact_setoid :> Equivalence(≡@{X});
     gact_proper :> Proper ((≡@{A}) ==> (≡@{X}) ==> (≡@{X})) (•);
