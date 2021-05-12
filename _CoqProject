@@ -7,8 +7,6 @@
 
 theories/Prelude.v
 theories/Group.v
-#theories/Action.v
 theories/Atom.v
 theories/Perm.v
-#theories/Nominal.v
-#theories/NominalInstances.v
+theories/Nominal.v

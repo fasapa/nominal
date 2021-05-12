@@ -26,7 +26,7 @@ Notation "(-)" := inv (only parsing) : nominal_scope.
 Notation "x - y" := (x + (-y))%nom : nominal_scope.
 
 Section GroupDef.
-  Context (A : Type) `{Ntr: Neutral A, Opr: Operator A, Inv: Inverse A, EqG: Equiv A}.
+  Context (A : Type) `{Ntr: Neutral A, Opr: Operator A, Inv: Inverse A, Equiv A}.
 
   Class Group: Prop := {
     group_setoid :> Equivalence(≡@{A});
@@ -42,7 +42,6 @@ Section GroupDef.
     group_right_inv : ∀ x, x - x ≡@{A} ɛ;
   }.
 End GroupDef.
-Print Group.
 (* #[global] Hint Mode Group ! - - - -: typeclass_instances. *)
 
 Arguments group_assoc {_ _ _ _ _ Grp} : rename.
@@ -85,22 +84,30 @@ Notation "(•)" := action (only parsing) : nominal_scope.
 Notation "(• x )" := (action x) (only parsing) : nominal_scope.
 Notation "( x •)" := (λ y, action y x) (only parsing): nominal_scope.
 
-Section GroupAction.
+(* Section GroupAction.
   Context (A X: Type) `{Grp: Group A, Act : Action A X, Equiv X}.
 
   Class GAction : Prop := {
-    gact_group :> Group A;
+    gact_group : Group A;
     gact_setoid :> Equivalence(≡@{X});
     gact_proper :> Proper ((≡@{A}) ==> (≡@{X}) ==> (≡@{X})) (•);
 
     gact_id : ∀ (x: X), ɛ@{A} • x ≡@{X} x;
     gact_compat: ∀ (p q: A) (x: X), p • (q • x) ≡@{X} (q + p) • x
   }.
-End GroupAction.
+End GroupAction. *)
+Class GAction `(Group G) (X : Type) `{Act : Action G X, Equiv X} : Prop := {
+  (* gact_group : Group A; *)
+  gact_setoid :> Equivalence(≡@{X});
+  gact_proper :> Proper ((≡@{G}) ==> (≡@{X}) ==> (≡@{X})) (•);
 
-Arguments gact_compat {_ _ _ _ _ _ _ EqX GAct} : rename.
+  gact_id : ∀ (x: X), ɛ@{G} • x ≡@{X} x;
+  gact_compat: ∀ (p q: G) (x: X), p • (q • x) ≡@{X} (q + p) • x
+}.
+
+(* Arguments gact_compat {_ _ _ _ _ _ _ EqX GAct} : rename.
 Arguments gact_id {_ _ _ _ _ _ _ EqX GAct} : rename.
-Arguments gact_proper {_ _ _ _ _ _ _ EqX GAct} : rename.
+Arguments gact_proper {_ _ _ _ _ _ _ EqX GAct} : rename. *)
 
 Section GroupActionProperties.
   Context `{GAction G X}.
@@ -122,3 +129,5 @@ Section GroupActionProperties.
     split; intros A; [apply perm_iff in A; rewrite <-(perm_left_inv y p) | rewrite A]; auto.
   Qed.
 End GroupActionProperties.
+
+

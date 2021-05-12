@@ -80,24 +80,30 @@ Class PAct X := pact :> Action perm X.
 #[global] Hint Mode PAct ! : typeclass_instances.
 (* Instance: Params (@pact) 1 := {}. *)
 
-Section PermType.
+Class Perm (X : Type) `{PA : PAct X, Equiv X} : Prop := {
+  ptype :> GAction PermGrp X (Act := @pact X PA)
+}.
+
+(* Section PermType.
   Context (X : Type) `{PA: PAct X, Equiv X}.
 
   Class Perm : Prop := 
     ptype :> GAction perm X (Act := @pact X PA).
 End PermType.
+ *)
+ #[global] Hint Mode Perm ! - - : typeclass_instances.
 
 (* Class Perm X `{XA: PermAction X, Equiv X} : Prop :=
   perm_type :> GAction perm X XA.
 #[global] Hint Mode Perm - - - : typeclass_instances. *)
 
 (* Permutation types properties *)
-Section PermTypeProperties.
+(* Section PermTypeProperties.
   Context `{Perm X}.
 
   
 End PermTypeProperties.
-
+ *)
 (* (** *Equivariant functions  *)
 Class EquivarF A B := equivar: A -> B.
 #[global] Hint Mode EquivarF ! ! : typeclass_instances.
@@ -108,3 +114,16 @@ Class Equivariant (A B: Type) `{Perm A, Perm B, A ~> B} := {
   equivariance : forall (p : perm) (a: A), p ∙ (equivar a) ≡@{B} equivar (p ∙ a)
 }.
  *)
+
+(* Perm Instances *)
+(* Perm *)
+#[global] Instance perm_act_conj : PAct perm := λ p q, (-p) + (q + p).
+#[global, refine] Instance PermPerm: Perm perm := { ptype := _ }. 
+Proof.
+  split; intros; unfold action, pact, perm_act_conj, "+", perm_operator.
+  - typeclasses eauto.
+  - repeat intro; pose proof H as Hn; apply group_inv_inj in Hn; unfold "≡", perm_equiv in *;
+        rewrite 4!perm_action_app, H, H0, Hn; reflexivity.
+  - unfold ɛ, perm_neutral; simpl; rewrite app_nil_r; auto.
+  - unfold "- _", perm_inverse; rewrite reverse_app, <-2!app_assoc, app_assoc; auto.   
+Qed. 
