@@ -15,7 +15,7 @@ Notation "(+)" := op (only parsing) : nominal_scope.
 Notation "(+ x )" := (op x) (only parsing) : nominal_scope.
 Notation "( x +)" := (λ y, op y x) (only parsing) : nominal_scope.
 
-Class Inverse A := inv : A → A.
+Class Inverse A := inv: A → A.
 #[global] Hint Mode Inverse ! : typeclass_instances.
 Instance: Params (@inv) 1 := {}.
 
@@ -63,6 +63,9 @@ Section GroupProperties.
 
   Corollary grp_inv_inj (x y: G): x ≡ y → (-x) ≡ (-y).
   Proof. apply grp_inv_proper. Qed.
+
+  Lemma perm_op_inv (x y : G) : -x - y ≡ -(y + x).
+  Proof. Admitted.
 End GroupProperties.
 
 (* Group Action  *)
@@ -99,6 +102,8 @@ Class GAction `(Group G) (X : Type) `{Act : Action G X, Equiv X} : Prop := {
   gact_compat: ∀ (p q: G) (x: X), p • (q • x) ≡@{X} (q + p) • x
 }.
 
+Existing Instance gact_proper.
+
 Arguments gact_id {_ _ _ _ _ Grp _ _ _ GAct} : rename.
 Arguments gact_compat {_ _ _ _ _ Grp _ _ _ GAct} : rename.
 Arguments gact_proper {_ _ _ _ _ Grp _ _ _ GAct} : rename.
@@ -121,4 +126,7 @@ Section GroupActionProperties.
   Proof. split; intros A; 
     [apply perm_iff in A; rewrite <-(perm_left_inv y p) | rewrite A]; auto.
   Qed.
+
+  Lemma perm_inv_empty_act (x : X) : -ɛ@{G} • x ≡ x.
+  Proof. rewrite grp_inv_neutral; apply gact_id. Qed.
 End GroupActionProperties.

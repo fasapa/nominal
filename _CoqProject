@@ -9,4 +9,5 @@ theories/Prelude.v
 theories/Group.v
 theories/Atom.v
 theories/Perm.v
+theories/ProperFun.v
 theories/Nominal.v

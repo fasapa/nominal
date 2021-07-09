@@ -6,11 +6,11 @@ Notation perm := (list (name * name)).
 Notation "⟨ a , b ⟩" := (@cons (name * name) (a,b) nil).
 
 (* Swap action on pair *)
-Definition swap '(a,b) : name -> name :=
+Definition swap '(a,b) : name → name :=
   λ c, if decide (a = c) then b else if decide (b = c) then a else c.
 
 (* Swap on perm *)
-Definition swap_perm (p: perm): name -> name := 
+Definition swap_perm (p: perm): name → name := 
   λ a, foldl (λ x y, swap y x) a p.
 
 Section SwapProperties.
@@ -93,6 +93,9 @@ Class PermAct X := prmact :> Action perm X.
 #[global] Hint Mode PermAct ! : typeclass_instances.
 (* Instance: Params (@pact) 1 := {}. *)
 
-Class Perm (X : Type) `{P : PermAct X, Equiv X} := 
+Polymorphic Class Perm (X : Type) `{P: PermAct X, Equiv X} := 
   prmtype :> GAction PermGrp X (Act := @prmact X P).
- #[global] Hint Mode Perm ! - - : typeclass_instances.
+#[global] Hint Mode Perm ! - - : typeclass_instances.
+
+#[global] Instance action_perm_proper `{Perm A}: Proper ((≡@{perm}) ⟹ (≡@{A}) ⟹ (≡@{A})) action.
+Proof. apply gact_proper. Qed.
