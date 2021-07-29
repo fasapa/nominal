@@ -18,7 +18,7 @@ End Atom.
 #[global] Existing Instances Atom.dec Atom.inf.
 
 
-(* Elpi experiments name *)
+(* Elpi experiments name
 From elpi Require Import elpi.
 
 Elpi Db atom.sort.db lp:{{
@@ -39,7 +39,9 @@ Elpi Accumulate declare_name lp:{{
   main _ :- coq.say "Usage: declare_name [name]".
 }}.
 Elpi Typecheck.
-Elpi declare_name name.
+Elpi declare_name name. *)
+
+Notation name := Atom.t.
 
 (* Finite set of names *)
 Notation nameset := (listset name).
