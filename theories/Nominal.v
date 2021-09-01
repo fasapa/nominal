@@ -14,3 +14,18 @@ Section Nominal.
 }.
 End Nominal.
 Arguments support_spec {_ PrA _ _ Nmn} : rename.
+
+(* Section NominalProperties.
+  Context `{Nominal X} (a b c : name) (x : X).
+  
+  Lemma lala : (a ∉ support x) → (c ∉ support x) →
+    a ≠ b → b ≠ c →
+    ⟨ c, a ⟩ • ⟨ a, b ⟩ • x ≡ ⟨ c, b ⟩ • x.
+  Proof. 
+    intros; rewrite (perm_expand c a b).
+    + repeat rewrite <- gact_compat. rewrite (support_spec x c a). auto.
+    + auto.
+    + auto.
+  Qed.
+        
+End NominalProperties. *)

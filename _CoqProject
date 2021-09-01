@@ -12,3 +12,4 @@ theories/Perm.v
 theories/ProperFun.v
 theories/Nominal.v
 theories/Fresh.v
+theories/Alpha.v

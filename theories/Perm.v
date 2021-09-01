@@ -77,15 +77,28 @@ Qed.
 Section PermGroupProperties.
   Context (a b c : name).
 
-  Lemma swap_equiv_neutral : ⟨a,a⟩ ≡ ɛ@{perm}.
+  Lemma perm_equiv_neutral : ⟨a,a⟩ ≡ ɛ@{perm}.
   Proof. unfold equiv, perm_equiv, swap_perm; intros; simpl; case_decide; auto. Qed.
 
-  Lemma swap_expand :
+  Lemma perm_expand :
     c ≠ a -> c ≠ b -> ⟨a,c⟩ ≡@{perm} ⟨a,b⟩ + ⟨b,c⟩ + ⟨a,b⟩.
   Proof.
     intros; unfold equiv, perm_equiv, swap_perm; intros; simpl; 
       repeat case_decide; subst; congruence.
   Qed.
+
+  Lemma perm_swap : ⟨a,b⟩ ≡ ⟨b,a⟩.
+  Proof. 
+    unfold equiv, perm_equiv, swap_perm; intros; simpl; 
+      repeat case_decide; subst; auto.
+  Qed.
+
+  Lemma perm_duplicate : ⟨a,b⟩ + ⟨a,b⟩ ≡ ɛ@{perm}.
+  Proof.
+    unfold equiv, perm_equiv, swap_perm; intros; simpl;
+      repeat case_decide; subst; first [congruence | auto].
+  Qed.
+
 End PermGroupProperties.
 
 (* Permutation action *)
@@ -99,3 +112,16 @@ Polymorphic Class Perm (X : Type) `{P: PermAct X, Equiv X} :=
 
 #[global] Instance action_perm_proper `{Perm A}: Proper ((≡@{perm}) ⟹ (≡@{A}) ⟹ (≡@{A})) action.
 Proof. apply gact_proper. Qed.
+
+Section PermProperties.
+  Context `{Perm X} (a b c : name) (x : X).
+
+  Lemma perm_action_duplicate : ⟨a,b⟩ • ⟨a,b⟩ • x ≡ x.
+  Proof. rewrite gact_compat, perm_duplicate; apply gact_id. Qed.
+
+  Lemma perm_action_equal : ⟨a,a⟩ • x ≡ x.
+  Proof. rewrite perm_equiv_neutral; apply gact_id. Qed.
+
+End PermProperties.
+
+
