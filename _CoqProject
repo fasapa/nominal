@@ -11,3 +11,4 @@ theories/Atom.v
 theories/Perm.v
 theories/ProperFun.v
 theories/Nominal.v
+theories/Fresh.v
