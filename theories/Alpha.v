@@ -1,20 +1,27 @@
 From Nominal Require Import Nominal Fresh.
 
+(* Instance alpha_equiv `{Nominal X} : Equiv (name * X) :=
+    λ '(a1, x1) '(a2, x2), ∃ (b : name), b # x1 ∧ b # x2 ∧ ⟨b,a1⟩ • x1 ≡@{X} ⟨b,a2⟩ • x2.
+    
+Infix "≈α" := (alpha_equiv) (at level 70, no associativity).
+
 Section AlphaEquivalence.
     Context `{Nominal X}.
 
-    #[global] Instance alpha_equiv `{Nominal X} : Equiv (name * X) :=
-        λ '(a1, x1) '(a2, x2), ∃ (a : name), a ∉ support x1 ∧ a ∉ support x2 ∧ ⟨a,a1⟩ • x1 ≡@{X} ⟨a,a2⟩ • x2.
-    
-    Infix "≈α" := (alpha_equiv) (at level 70, no associativity).
-
     Lemma alpha_equiv_forall `{Nominal X} a1 a2 x1 x2 :
-        (a1, x1) ≈α (a2, x2) → (∀ c, c ∉ support x1 ∧ c ∉ support x2 → ⟨c,a1⟩ • x1 ≡ ⟨c,a2⟩ • x2).
+        (a1, x1) ≈α (a2, x2) → (∀ c, c #ₑ x1 ∧ c #ₑ x2 → ⟨c,a1⟩ • x1 ≡@{X} ⟨c,a2⟩ • x2).
     Proof.
         intros [b Hb] c Hc; destruct_and!; destruct (decide (b = c)); subst.
         - assumption.
-        - destruct (decide (b = a1)), (decide (b = a2)), (decide (c = a1)), (decide (c = a2)); 
-            try congruence; subst; try (rewrite perm_equiv_neutral in *);
+        - destruct H5 as [x []].
+        
+        
+        
+        
+        
+        
+        destruct (decide (b = a1)), (decide (b = a2)), (decide (c = a1)), (decide (c = a2));
+            try congruence; subst; try (rewrite perm_equiv_neutral in );
             repeat match goal with
             | H : context[ɛ • _] |- _ => rewrite gact_id in H
             | _ : _ |- context[ɛ • _] => rewrite gact_id
@@ -56,3 +63,24 @@ Section AlphaEquivalence.
             rewrite H1, H2; auto.
     Qed.   
 End AlphaEquivalence.
+
+Section AlphaEquivalenceProperties.
+    Context `{Nominal X} (a1 a2 : name) (x1 x2 : X).
+
+    Lemma alpha_inv1: (a1, x1) ≈α (a2, x2) → a1 = a2 → x1 ≡ x2.
+    Proof. intros [? [? []]] ?; subst; eapply perm_inj; eauto. Qed.
+
+    Lemma alpha_inv2: a1 = a2 → x1 ≡ x2 → (a1, x1) ≈α (a2, x2).
+    Proof. intros ? HX; subst; set (S := (support x1) ∪ (support x2)); 
+        exists (fresh S); repeat try split.
+        - apply is_fresh_union_left.
+        - apply is_fresh_union_right.
+        - apply perm_inj; auto.
+    Qed.
+
+    Lemma alpha_inv_fresh: (a1, x1) ≈α (a2, x2) → a1 #ₑ x1 → a2 #ₑ x2 → x1 ≡ x2.
+    Proof. intros. eapply alpha_equiv_forall in H1.
+    
+    intros [b [? []]] ? ?.
+
+End AlphaEquivalenceProperties. *)

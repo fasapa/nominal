@@ -22,8 +22,16 @@ Section SwapProperties.
   Lemma swap_right : swap (a,b) b = a.
   Proof. simpl; repeat case_decide; congruence. Qed.
 
-  Lemma swap_neither : a ≠ c → b ≠ c → swap (a, b) c = c.
+  Lemma swap_neither1 : a ≠ c → b ≠ c → swap (a, b) c = c.
   Proof. intros; simpl; repeat case_decide; congruence. Qed.
+
+  Lemma swap_neither2 : swap (a, b) c = c → (a ≠ c ∧ b ≠ c) ∨ (a = c ∧ b = c).
+  Proof. 
+    intros; simpl in *; try repeat case_decide; subst.
+    - right; auto.
+    - congruence.
+    - left; auto.  
+  Qed.
 
   Lemma swap_id : swap (a,a) c = c.
   Proof. simpl; case_decide; congruence. Qed.

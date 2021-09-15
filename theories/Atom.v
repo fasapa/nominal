@@ -45,3 +45,9 @@ Notation name := Atom.t.
 
 (* Finite set of names *)
 Notation nameset := (listset name).
+
+Lemma is_fresh_union_left (A B : nameset): fresh (A ∪ B) ∉ A.
+Proof. Admitted.
+
+Lemma is_fresh_union_right (A B : nameset): fresh (A ∪ B) ∉ B.
+Proof. Admitted.
