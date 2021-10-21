@@ -1,86 +1,81 @@
-From Nominal Require Import Nominal Fresh.
+Require Import Coq.Classes.RelationClasses.
+From Nominal Require Import Nominal Fresh Instances.Name.
 
-(* Instance alpha_equiv `{Nominal X} : Equiv (name * X) :=
-    λ '(a1, x1) '(a2, x2), ∃ (b : name), b # x1 ∧ b # x2 ∧ ⟨b,a1⟩ • x1 ≡@{X} ⟨b,a2⟩ • x2.
+(* Record NameAbstraction `{Nominal X} (a1x1 a2x2: name * X) := mkNameAbstraction {
+    new: name;
+    new_fresh1: new # (snd a1x1);
+    new_fresh2: new # (snd a2x2);
+    new_fixpoint: ⟨new, fst a1x1⟩ • (snd a1x1) ≡@{X} ⟨new, fst a2x2⟩ • (snd a2x2) 
+}. *)
+
+Definition NameAbstraction_e `{Nominal X} (a1x1 a2x2: name * X) :=
+    ∃ (b: name), b #(fst a1x1, fst a2x2, snd a1x1, snd a2x2) ∧ 
+                 ⟨b,fst a1x1⟩ • (snd a1x1) ≡@{X} ⟨b,fst a2x2⟩ • (snd a2x2).
+
+Definition NameAbstraction_a `{Nominal X} (a1x1 a2x2: name * X) :=
+    ∀ (b: name), b #(fst a1x1, fst a2x2, snd a1x1, snd a2x2) →
+                 ⟨b,fst a1x1⟩ • (snd a1x1) ≡@{X} ⟨b,fst a2x2⟩ • (snd a2x2).
+
+Instance alpha_equiv_e `{Nominal X}: Equiv (name * X) | 0 := NameAbstraction_e.
+Instance alpha_equiv_a `{Nominal X}: Equiv (name * X) | 1 := NameAbstraction_a.
     
-Infix "≈α" := (alpha_equiv) (at level 70, no associativity).
+Infix "≈α" := (alpha_equiv_e) (at level 70, no associativity).
+Infix "≈αₐ" := (alpha_equiv_a) (at level 70, no associativity).
 
 Section AlphaEquivalence.
     Context `{Nominal X}.
 
-    Lemma alpha_equiv_forall `{Nominal X} a1 a2 x1 x2 :
-        (a1, x1) ≈α (a2, x2) → (∀ c, c #ₑ x1 ∧ c #ₑ x2 → ⟨c,a1⟩ • x1 ≡@{X} ⟨c,a2⟩ • x2).
+    Lemma alpha_equiv_some_any `{Nominal X} a1 a2 x1 x2 :
+        (a1, x1) ≈α (a2, x2) ↔ (a1, x1) ≈αₐ (a2, x2).
     Proof.
-        intros [b Hb] c Hc; destruct_and!; destruct (decide (b = c)); subst.
-        - assumption.
-        - destruct H5 as [x []].
-        
-        
-        
-        
-        
-        
-        destruct (decide (b = a1)), (decide (b = a2)), (decide (c = a1)), (decide (c = a2));
-            try congruence; subst; try (rewrite perm_equiv_neutral in );
-            repeat match goal with
-            | H : context[ɛ • _] |- _ => rewrite gact_id in H
-            | _ : _ |- context[ɛ • _] => rewrite gact_id
-            end.
-            + rewrite H8; auto.
-            + rewrite H8; rewrite perm_swap; apply perm_action_duplicate.
-            + rewrite (perm_expand c a1 a2); auto;
-                repeat rewrite <-gact_compat; rewrite (support_spec x2); auto;
-                rewrite <-H8; reflexivity.
-            + rewrite support_spec in H8; auto; rewrite H8; symmetry; apply support_spec; auto.
-            + rewrite (perm_expand _ a2 _); auto; repeat rewrite <-gact_compat; 
-                rewrite (support_spec x1); auto; rewrite H8; reflexivity.
-            + eapply perm_inj; eauto.
-            + rewrite support_spec in H8; auto; rewrite (perm_expand _ b _); auto;
-                repeat rewrite <-gact_compat; rewrite (support_spec x2 _ _); auto;
-                rewrite <-H8; rewrite support_spec; auto.
-            + rewrite (support_spec x2) in H8; auto; rewrite (perm_expand _ b _); auto;
-                repeat rewrite <-gact_compat; rewrite (support_spec x1 _ _); auto;
-                rewrite H8; rewrite support_spec; auto.
-            + apply (perm_inj) with ⟨b, c⟩; rewrite <-(support_spec x1 b c); eauto.
-                rewrite <-(support_spec x2 b c); eauto; repeat rewrite gact_compat;
-                repeat rewrite grp_assoc. rewrite <-2!perm_expand; auto.
+        split; intros Hα; unfold alpha_equiv_e, alpha_equiv_a, NameAbstraction_e, NameAbstraction_a in *;
+            simpl in *.
+        - intros; simpl in *; destruct Hα as [y [? Hα]]; destruct_and!;
+            rewrite (perm_expand _ y a1), (perm_expand _ y a2), <-!gact_compat, 
+                (fresh_fixpoint _ _ x1), (fresh_fixpoint _ _ x2), Hα;
+                    try (apply not_eq_sym, name_neq_fresh_iff); auto.
+        - destruct (exist_fresh (support a1 ∪ support a2 ∪ support x1 ∪ support x2))
+            as [y [[[? ?]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union];
+          exists y; split; [| apply Hα]; split_and!; apply support_fresh; assumption.
     Qed.               
 
-    (* #[global] Instance alpha_equiv_a `{Nominal X} : Equiv (name * X) :=
-        λ '(a1, x1) '(a2, x2), ∃ (a : name), a #ₑ x1 ∧ a #ₑ x2 ∧ ⟨a,a1⟩ • x1 ≡@{X} ⟨a,a2⟩ • x2.
-    
-    Infix "≈αₑ" := (alpha_equiv_e) (at level 70, only parsing, no associativity). *)
-
-    #[global] Instance alpha_equivalence: Equivalence alpha_equiv.
+    #[global] Instance alpha_equivalence_e: Equivalence alpha_equiv_e.
     Proof.
-        split; repeat intro;
-        repeat match goal with p : name * X |- _ => destruct p end.
-        - exists (fresh (support x)); repeat try split; auto; apply is_fresh.
-        - destruct H1; exists x1; intuition.
-        - set (S := (support x) ∪ (support x1) ∪ (support x0));
-            pose proof (is_fresh S); exists (fresh S); repeat split; [set_solver | set_solver |].
-            eapply alpha_equiv_forall with (c := fresh S) in H1,H2; [| set_solver | set_solver].
-            rewrite H1, H2; auto.
-    Qed.   
+        split.
+        - intros [a x]; destruct (exist_fresh (support a ∪ support x)) as [y []%not_elem_of_union];
+            exists y; split_and!; simpl; try (apply support_fresh); auto.
+        - intros ? ? [z ?]; exists z; intuition. 
+        - intros [a x] [b y] [c z] ? ?; simpl in *.
+            destruct (exist_fresh (support a ∪ support x ∪ support b ∪ support y ∪ support c ∪ support z))
+                as [f ?]; apply alpha_equiv_some_any in H1,H2; exists f; split;
+                    [| rewrite (H1 f), (H2 f)]; simpl; try (split_and!; apply support_fresh); set_solver.
+    Qed.
+
+    #[global] Instance alpha_equivalence_a: Equivalence alpha_equiv_a.
+    Proof.
+        split.
+        - intros [] ? ?; simpl; reflexivity.
+        - intros [] [] HH b ?; specialize (HH b); intuition.
+        - intros [] [q p] [] H1 H2; apply alpha_equiv_some_any in H1,H2; apply alpha_equiv_some_any.
+            (* for some reason Coq cant find an instance for Transitive alpha_equiv_e, even though its
+               define just above. *)
+            pose proof (@Equivalence_Transitive _ _ alpha_equivalence_e).
+            transitivity (q, p); auto.
+    Qed.
 End AlphaEquivalence.
 
 Section AlphaEquivalenceProperties.
     Context `{Nominal X} (a1 a2 : name) (x1 x2 : X).
 
     Lemma alpha_inv1: (a1, x1) ≈α (a2, x2) → a1 = a2 → x1 ≡ x2.
-    Proof. intros [? [? []]] ?; subst; eapply perm_inj; eauto. Qed.
+    Proof. intros [? [? ?]] ?; subst; eapply perm_inj; eauto. Qed.
 
     Lemma alpha_inv2: a1 = a2 → x1 ≡ x2 → (a1, x1) ≈α (a2, x2).
-    Proof. intros ? HX; subst; set (S := (support x1) ∪ (support x2)); 
-        exists (fresh S); repeat try split.
-        - apply is_fresh_union_left.
-        - apply is_fresh_union_right.
-        - apply perm_inj; auto.
+    Proof. 
+        intros ? HX; subst; destruct (exist_fresh (support x1 ∪ support x2 ∪ support a2)) as [w ?]; 
+        exists w; split_and!; simpl; try rewrite HX; try (apply support_fresh); set_solver.
     Qed.
 
-    Lemma alpha_inv_fresh: (a1, x1) ≈α (a2, x2) → a1 #ₑ x1 → a2 #ₑ x2 → x1 ≡ x2.
-    Proof. intros. eapply alpha_equiv_forall in H1.
-    
-    intros [b [? []]] ? ?.
-
-End AlphaEquivalenceProperties. *)
+    Lemma alpha_inv_fresh: (a1, x1) ≈α (a2, x2) → a1 # x1 → a2 # x2 → x1 ≡ x2.
+    Proof. Admitted.
+End AlphaEquivalenceProperties.

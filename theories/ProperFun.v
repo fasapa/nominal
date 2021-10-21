@@ -37,23 +37,23 @@ Section ProperFunEquiv.
 End ProperFunEquiv.
 
 Section ProperFunPerm.
-    Context `{Perm A, Perm B}.
+  Context `{Perm A, Perm B}.
 
-    #[global,refine] Instance fun_proper_act: PermAct (A →ₚ B) :=
-        λ p (f: A →ₚ B), (λₚ (a : A), p • f(-p • a)).
-    Proof. 
-        all:try (assumption || typeclasses eauto);
-        repeat intro; rewrite H3; reflexivity. 
+  #[global,refine] Instance fun_proper_act: PermAct (A →ₚ B) :=
+    λ p (f: A →ₚ B), (λₚ (a: A), p • f(-p • a)).
+  Proof. 
+    all:try (assumption || typeclasses eauto);
+    repeat intro; rewrite H3; reflexivity. 
   Defined. 
 
   #[global] Instance FunProperPerm: Perm (A →ₚ B).
   Proof. 
-      split.
-        - apply fun_proper_equivalence.
-        - intros ? ? EE f g EF ?; simpl; rewrite EE, EF; auto. 
-        - unfold equiv, fun_proper_equiv; intros; simpl;
-            rewrite gact_id, grp_inv_neutral, gact_id; reflexivity.
-        - unfold equiv, fun_proper_equiv; intros; simpl;
-            rewrite <-perm_op_inv, 2!gact_compat; reflexivity.
+    split.
+      - apply fun_proper_equivalence.
+      - intros ? ? EE f g EF ?; simpl; rewrite EE, EF; auto. 
+      - unfold equiv, fun_proper_equiv; intros; simpl;
+          rewrite gact_id, grp_inv_neutral, gact_id; reflexivity.
+      - unfold equiv, fun_proper_equiv; intros; simpl;
+          rewrite <-perm_op_inv, 2!gact_compat; reflexivity.
   Qed.
 End ProperFunPerm.
