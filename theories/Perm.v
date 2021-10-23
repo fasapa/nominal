@@ -13,6 +13,12 @@ Definition swap '(a,b) : name → name :=
 Definition swap_perm (p: perm): name → name := 
   λ a, foldl (λ x y, swap y x) a p.
 
+(* List of names from perm *)
+Definition names (p: perm): list name := foldr (λ '(a,b) l, a :: b :: l) [] p.
+
+Lemma names_cons p (a b: name): names ((a,b) :: p) = a :: b :: (names p).
+Proof. reflexivity. Qed.
+
 Section SwapProperties.
   Context (a b c : name) (p : name * name) (r s : perm).
 
@@ -57,6 +63,18 @@ Proof with auto.
   - simpl...
   - rewrite HH, reverse_app, reverse_singleton, <- swap_perm_app, <-app_assoc, 
       3?swap_perm_app; simpl; rewrite swap_involutive...
+Qed.
+
+Lemma swap_perm_neither (a b c: name): a ≠ b → a ≠ c → swap_perm ⟨b,c⟩ a = a.
+Proof. unfold swap_perm, foldl; intros; rewrite swap_neither1; intuition. Qed.
+
+Lemma lalal (p: perm) (a: name): a ∉ (names p) → swap_perm p a = a.
+Proof.
+  intros; induction p as [| [b c] p'].
+  - reflexivity.
+  - assert (HH: ∀ A (x: A) y, x :: y = [x] ++ y). { reflexivity. }
+    rewrite HH, swap_perm_app; rewrite names_cons in H; do 2 apply not_elem_of_cons in H as [? H];
+    rewrite swap_perm_neither; intuition.
 Qed.
 
 (** *Permutation as list forms a Group *)

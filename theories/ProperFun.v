@@ -3,22 +3,20 @@ From Nominal Require Import Perm.
 Section ProperPermFun.
   Context (A B: Type) `{Equiv A, Equiv B}.
   
-  Record FunProper: Type := MFunProper {
+  Record FunProper: Type := mkFunProper {
     fproper :> A → B;
-(*  f_to : Perm A;
-    f_from : Perm B; *)
     fproper_spec: Proper ((≡@{A}) ⟹ (≡@{B})) fproper
   }.
 End ProperPermFun.
 
-Arguments MFunProper {_ _ _ _} _ {_}.
+Arguments mkFunProper {_ _ _ _} _ {_}.
 Existing Instance fproper_spec.
 
 Notation "'λₚ' x .. y , t" :=
-  (@MFunProper _ _ _ _ (λ x, .. (@MFunProper _ _ _ _ (λ y, t) _) ..) _)
+  (@mkFunProper _ _ _ _ (λ x, .. (@mkFunProper _ _ _ _ (λ y, t) _) ..) _)
   (at level 200, x binder, y binder, right associativity).
   
-Notation " A →ₚ B " := (FunProper A B) (at level 99, B at level 200, right associativity).
+Notation " A '→ₚ' B " := (FunProper A B) (at level 99, B at level 200, right associativity).
 
 Section ProperFunEquiv.
   Context `{Equiv A, Equiv B, !Equivalence (≡@{A}), !Equivalence (≡@{B})}.
