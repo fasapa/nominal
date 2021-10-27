@@ -23,22 +23,23 @@ Notation "'λₛ' x .. y , t" :=
 
 Notation " A '→ₛ' B " := (FunSupp A B) (at level 99, B at level 200, right associativity).
 
-Print Listset.
-
-Search (list _ -> listset _).
-
 Section FunSuppProperties.
     Context `{Nominal X, Nominal Y}.
-
+    
     #[global, refine] Instance fsupp_action: PermAct (X →ₛ Y) :=
         λ p fs, mkFunSupp (fun_proper_act p (fsp fs)) _.
     Proof.
-      - exact ((fsupp fs) ∪ (Listset (names p))).
-      - admit.
-    Admitted. 
+      - exact ((fsupp fs) ∪ (perm_dom p)).
+      - intros; unfold fun_proper_act; simpl; rewrite perm_comm.
+        + apply perm_inj; pose proof (fproper_spec _ _ fs);
+          unfold Proper,respectful in *. (* WHY? *)
+          rewrite (H5 (- p • ⟨ a, b ⟩ • x) (⟨ a, b ⟩ • (-p) • x)).
+          rewrite fsupp_spec; set_solver. symmetry; apply perm_comm;
+          apply perm_dom_inv; set_solver.
+        + set_solver.
+        + set_solver.  
+    Qed. 
         
     #[global] Instance fun_support: Support (X →ₛ Y) := λ fs, fsupp fs.
     (* #[global] Instance fsupp_nominal: Nominal (X →ₛ Y). *)
 End FunSuppProperties.
-
-Check fun_support.

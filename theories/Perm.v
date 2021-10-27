@@ -14,13 +14,17 @@ Definition swap_perm (p: perm): name → name :=
   λ a, foldl (λ x y, swap y x) a p.
 
 (* List of names from perm *)
-Definition names (p: perm): list name := foldr (λ '(a,b) l, a :: b :: l) [] p.
+Fixpoint perm_dom (p: perm): nameset :=  
+  match p with
+  | [] => ∅
+  | (a,b) :: p' => {[a; b]} ∪ perm_dom p'
+  end.
 
-Lemma names_cons p (a b: name): names ((a,b) :: p) = a :: b :: (names p).
-Proof. reflexivity. Qed.
+(* Lemma names_cons p (a b: name): names ((a,b) :: p) = a :: b :: (names p).
+Proof. reflexivity. Qed. *)
 
 Section SwapProperties.
-  Context (a b c : name) (p : name * name) (r s : perm).
+  Context (a b c d : name) (p : name * name) (r s : perm).
 
   Lemma swap_left : swap (a,b) a = b.
   Proof. simpl; repeat case_decide; congruence. Qed.
@@ -38,6 +42,9 @@ Section SwapProperties.
     - congruence.
     - left; auto.  
   Qed.
+
+  Lemma swap_neq: a ≠ b → swap (c, d) a ≠ swap (c, d) b.
+  Proof. intros; simpl; repeat case_decide; congruence. Qed.
 
   Lemma swap_id : swap (a,a) c = c.
   Proof. simpl; case_decide; congruence. Qed.
@@ -68,13 +75,26 @@ Qed.
 Lemma swap_perm_neither (a b c: name): a ≠ b → a ≠ c → swap_perm ⟨b,c⟩ a = a.
 Proof. unfold swap_perm, foldl; intros; rewrite swap_neither1; intuition. Qed.
 
-Lemma lalal (p: perm) (a: name): a ∉ (names p) → swap_perm p a = a.
+Lemma swap_perm_left (a b: name): swap_perm ⟨a,b⟩ a = b.
+Proof. unfold swap_perm, foldl; apply swap_left. Qed.
+
+Lemma swap_perm_right (a b: name): swap_perm ⟨b,a⟩ a = b.
+Proof. unfold swap_perm, foldl. apply swap_right. Qed.
+
+Lemma swap_perm_neq p: ∀ a b, a ≠ b → swap_perm p a ≠ swap_perm p b.
+Proof.
+  induction p as [|[] ? IHp].
+  - auto.
+  - intros; simpl; apply IHp,swap_neq; auto.
+Qed.
+
+Lemma perm_notin_domain_id (p: perm) (a: name): a ∉ (perm_dom p) → swap_perm p a = a.
 Proof.
   intros; induction p as [| [b c] p'].
   - reflexivity.
   - assert (HH: ∀ A (x: A) y, x :: y = [x] ++ y). { reflexivity. }
-    rewrite HH, swap_perm_app; rewrite names_cons in H; do 2 apply not_elem_of_cons in H as [? H];
-    rewrite swap_perm_neither; intuition.
+    rewrite HH, swap_perm_app; simpl in H; do 2 apply not_elem_of_union in H as [H ?];
+    rewrite swap_perm_neither; set_solver.
 Qed.
 
 (** *Permutation as list forms a Group *)
@@ -119,13 +139,32 @@ Section PermGroupProperties.
       repeat case_decide; subst; auto.
   Qed.
 
-  Lemma perm_duplicate : ⟨a,b⟩ + ⟨a,b⟩ ≡ ɛ@{perm}.
+  Lemma perm_duplicate: ⟨a,b⟩ + ⟨a,b⟩ ≡ ɛ@{perm}.
   Proof.
     unfold equiv, perm_equiv, swap_perm; intros; simpl;
       repeat case_decide; subst; first [congruence | auto].
   Qed.
 
 End PermGroupProperties.
+
+Lemma perm_comm_distr a b p: ⟨a,b⟩ + p ≡ p + ⟨swap_perm p a, swap_perm p b⟩.
+Proof.
+  unfold equiv, perm_equiv, op, perm_operator; intros x;
+  destruct (decide (a = x)), (decide (b = x)); subst; rewrite 2!swap_perm_app.
+  - rewrite 2!perm_equiv_neutral; auto.
+  - rewrite 2!swap_perm_left; auto.
+  - rewrite 2!swap_perm_right; auto. 
+  - rewrite 2!swap_perm_neither; try apply swap_perm_neq; intuition.
+Qed.
+
+Lemma perm_notin_dom_comm a b p: a ∉ perm_dom p → b ∉ perm_dom p → ⟨a,b⟩ + p ≡ p + ⟨a,b⟩.
+Proof.
+  intros; rewrite perm_comm_distr; unfold equiv, perm_equiv; intros x;
+    rewrite 2!(perm_notin_domain_id p); auto.
+Qed.
+
+Lemma perm_dom_inv p a: a ∉ perm_dom p → a ∉ perm_dom (-p).
+Proof. Admitted.
 
 (* Permutation action *)
 Class PermAct X := prmact :> Action perm X.
@@ -142,11 +181,14 @@ Proof. apply gact_proper. Qed.
 Section PermProperties.
   Context `{Perm X} (a b c : name) (x : X).
 
-  Lemma perm_action_duplicate : ⟨a,b⟩ • ⟨a,b⟩ • x ≡ x.
+  Lemma perm_action_duplicate: ⟨a,b⟩ • ⟨a,b⟩ • x ≡ x.
   Proof. rewrite gact_compat, perm_duplicate; apply gact_id. Qed.
 
-  Lemma perm_action_equal : ⟨a,a⟩ • x ≡ x.
+  Lemma perm_action_equal: ⟨a,a⟩ • x ≡ x.
   Proof. rewrite perm_equiv_neutral; apply gact_id. Qed.
+
+  Lemma perm_comm p: a ∉ perm_dom p → b ∉ perm_dom p → ⟨a,b⟩ • p • x ≡ p • ⟨a,b⟩ • x.
+  Proof. intros; rewrite gact_compat, <-perm_notin_dom_comm, <-gact_compat; auto. Qed.
 
 End PermProperties.
 
