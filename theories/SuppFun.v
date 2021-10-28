@@ -42,7 +42,7 @@ Section FunSuppProperties.
         (* see https://github.com/coq/coq/issues/8872 *)
         setoid_rewrite <-perm_comm; [rewrite f_supp_spec | apply perm_dom_inv | apply perm_dom_inv];
         set_solver.
-    Defined. 
+    Defined.
 
     #[global] Instance fun_supp_perm: Perm (X →ₛ Y).
     Proof.
@@ -65,3 +65,15 @@ Section FunSuppProperties.
         simpl; intros; rewrite <-perm_inv; apply f_supp_spec; assumption.
     Qed.
 End FunSuppProperties.
+
+From Nominal Require Import Fresh.
+
+Lemma fresh_fun_supp `{Nominal X, Nominal Y} (f: X →ₛ Y): 
+  ∀ (a: name) (x: X), a # f → a # x → a # f x.
+Proof.
+  intros; apply some_any_iff in H3,H4; destruct (exist_fresh (support f ∪ support x ∪ support (f x))) as [b].
+  assert (Hsupp: b ∉ support f ∧ b ∉ support x). { set_solver. } destruct Hsupp;
+  exists b; split; [set_solver |];
+  unfold freshP_a, action, prmact, fun_supp_act, equiv, fun_supp_equiv in H3; simpl in *;
+  specialize (H3 b H6 x); specialize (H4 b H7); rewrite <-perm_inv, H4 in H3; assumption.
+Qed.
