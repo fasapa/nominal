@@ -1,5 +1,5 @@
 From Nominal Require Export Prelude.
-From stdpp Require Import listset countable infinite.
+From stdpp Require Export listset countable infinite.
 
 Module Type ATOMIC.
   Parameter t : Set.
@@ -44,7 +44,7 @@ Elpi declare_name name. *)
 Notation name := Atom.t.
 
 (* Finite set of names *)
-Notation nameset := (listset name).
+Definition nameset := (listset name).
 
 Lemma is_fresh_union_left (A B : nameset): fresh (A ∪ B) ∉ A.
 Proof. Admitted.

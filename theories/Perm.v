@@ -1,4 +1,4 @@
-From stdpp Require Import list.
+From stdpp Require Export list.
 From Nominal Require Export Atom Group.
 
 (* Permutation is just a list of pair of names. *)
@@ -20,8 +20,16 @@ Fixpoint perm_dom (p: perm): nameset :=
   | (a,b) :: p' => {[a; b]} ∪ perm_dom p'
   end.
 
-(* Lemma names_cons p (a b: name): names ((a,b) :: p) = a :: b :: (names p).
-Proof. reflexivity. Qed. *)
+Transparent listset_empty.
+Lemma perm_dom_concat p: ∀ p', perm_dom (p ++ p') = (perm_dom p) ∪ (perm_dom p').
+Proof.
+  induction p.
+  - intros; simpl; unfold empty, listset_empty, union, listset_union; simpl;
+      destruct (perm_dom p'); reflexivity.
+  - intros; simpl; destruct a as [a b]; rewrite IHp, assoc; auto.
+    unfold Assoc, union, listset_union; intros [] [] []; rewrite assoc; [auto | typeclasses eauto].
+Qed.
+Opaque listset_empty.
 
 Section SwapProperties.
   Context (a b c d : name) (p : name * name) (r s : perm).
@@ -123,7 +131,7 @@ Qed.
 Section PermGroupProperties.
   Context (a b c : name).
 
-  Lemma perm_equiv_neutral : ⟨a,a⟩ ≡ ɛ@{perm}.
+  Lemma perm_equiv_neutral: ⟨a,a⟩ ≡ ɛ@{perm}.
   Proof. unfold equiv, perm_equiv, swap_perm; intros; simpl; case_decide; auto. Qed.
 
   Lemma perm_expand :
@@ -144,8 +152,10 @@ Section PermGroupProperties.
     unfold equiv, perm_equiv, swap_perm; intros; simpl;
       repeat case_decide; subst; first [congruence | auto].
   Qed.
-
 End PermGroupProperties.
+
+Lemma perm_inv a b: ⟨a,b⟩ ≡ -⟨a,b⟩.
+Proof. Admitted.
 
 Lemma perm_comm_distr a b p: ⟨a,b⟩ + p ≡ p + ⟨swap_perm p a, swap_perm p b⟩.
 Proof.
@@ -164,7 +174,13 @@ Proof.
 Qed.
 
 Lemma perm_dom_inv p a: a ∉ perm_dom p → a ∉ perm_dom (-p).
-Proof. Admitted.
+Proof. 
+  induction p as [| p p' IHp]; intros H.
+  - simpl in *; auto.
+  - assert (HH: ∀ A (x: A) y, x :: y = [x] ++ y). { intros; simpl; auto. }
+    unfold inv, perm_inverse; rewrite reverse_cons; rewrite HH in H.
+    rewrite perm_dom_concat in *; set_solver.
+Qed.
 
 (* Permutation action *)
 Class PermAct X := prmact :> Action perm X.
