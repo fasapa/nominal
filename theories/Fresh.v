@@ -72,3 +72,36 @@ Proof.
     + rewrite (perm_expand _ p _), (perm_expand p k b), !grp_assoc, <-!gact_compat, 
         Fp, (perm_swap k b), (support_spec x p k), Fk, (support_spec x p k), Fp; auto.
 Qed.
+
+Ltac support_fresh_tac :=
+  repeat (match goal with
+    | [H : _ ∉ support _ |- _] => apply support_fresh in H
+    end).
+Ltac destruct_notin_union :=
+    repeat (match goal with 
+      | [H : _ ∉ _ ∪ _ |- _] => apply not_elem_of_union in H as []
+      end).
+
+Tactic Notation "new" ident(w) "fresh" constr(H1) :=
+destruct (exist_fresh (support H1)) as [w ?]; 
+destruct_notin_union; support_fresh_tac.
+
+Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) :=
+destruct (exist_fresh (support H1 ∪ support H2)) as [w ?]; 
+destruct_notin_union; support_fresh_tac.
+
+Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) :=
+destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3)) as [w ?]; 
+destruct_notin_union; support_fresh_tac.
+
+Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) constr(H4) :=
+destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4)) as [w ?];
+destruct_notin_union; support_fresh_tac.
+
+Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) constr(H4) constr(H5) :=
+destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5)) as [w ?];
+destruct_notin_union; support_fresh_tac.
+
+Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) constr(H4) constr(H5) constr(H6) :=
+destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5 ∪ support H6)) as [w ?];
+destruct_notin_union; support_fresh_tac.

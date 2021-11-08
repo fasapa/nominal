@@ -34,10 +34,8 @@ Section AlphaEquivalence.
             rewrite (perm_expand _ y a1), (perm_expand _ y a2), <-!gact_compat, 
                 (fresh_fixpoint _ _ x1), (fresh_fixpoint _ _ x2), Hα;
                     try (apply not_eq_sym, name_neq_fresh_iff); auto.
-        - destruct (exist_fresh (support a1 ∪ support a2 ∪ support x1 ∪ support x2))
-            as [y [[[? ?]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union];
-          exists y; split; [| apply Hα]; split_and!; apply support_fresh; assumption.
-    Qed.               
+        - new b fresh a1 a2 x1 x2; exists b; split; [ | apply Hα]; intuition.
+    Qed.
 
     #[global] Instance alpha_equivalence_e: Equivalence alpha_equiv_e.
     Proof.
@@ -46,9 +44,8 @@ Section AlphaEquivalence.
             exists y; split_and!; simpl; try (apply support_fresh); auto.
         - intros ? ? [z ?]; exists z; intuition. 
         - intros [a x] [b y] [c z] ? ?; simpl in *.
-            destruct (exist_fresh (support a ∪ support x ∪ support b ∪ support y ∪ support c ∪ support z))
-                as [f ?]; apply alpha_equiv_some_any in H1,H2; exists f; split;
-                    [| rewrite (H1 f), (H2 f)]; simpl; try (split_and!; apply support_fresh); set_solver.
+            new f fresh a x b y c z; apply alpha_equiv_some_any in H1,H2; exists f; split; simpl;
+                [| rewrite (H1 f), (H2 f)]; intuition. 
     Qed.
 
     #[global] Instance alpha_equivalence_a: Equivalence alpha_equiv_a.
@@ -72,10 +69,14 @@ Section AlphaEquivalenceProperties.
 
     Lemma alpha_inv2: a1 = a2 → x1 ≡ x2 → (a1, x1) ≈α (a2, x2).
     Proof. 
-        intros ? HX; subst; destruct (exist_fresh (support x1 ∪ support x2 ∪ support a2)) as [w ?]; 
-        exists w; split_and!; simpl; try rewrite HX; try (apply support_fresh); set_solver.
+        intros ? HX; subst; new w fresh x1 x2 a2; exists w; simpl; split; [| rewrite HX]; intuition.
     Qed.
 
     Lemma alpha_inv_fresh: (a1, x1) ≈α (a2, x2) → a1 # x1 → a2 # x2 → x1 ≡ x2.
-    Proof. Admitted.
+    Proof.
+        intros A%alpha_equiv_some_any F1 F2; new w fresh a1 a2 x1 x2;
+        cut (w #( a1, a2, x1, x2)); [intros FF | set_solver];
+        specialize (A w FF); simpl in *; rewrite 2!fresh_fixpoint in A; auto.
+    Qed.
+
 End AlphaEquivalenceProperties.

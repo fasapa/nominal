@@ -71,9 +71,9 @@ From Nominal Require Import Fresh.
 Lemma fresh_fun_supp `{Nominal X, Nominal Y} (f: X →ₛ Y): 
   ∀ (a: name) (x: X), a # f → a # x → a # f x.
 Proof.
-  intros; apply some_any_iff in H3,H4; destruct (exist_fresh (support f ∪ support x ∪ support (f x))) as [b].
-  assert (Hsupp: b ∉ support f ∧ b ∉ support x). { set_solver. } destruct Hsupp;
-  exists b; split; [set_solver |];
+  intros; apply some_any_iff in H3,H4;
+  destruct (exist_fresh (support f ∪ support x ∪ support (f x))) as [b]; destruct_notin_union;
+  exists b; split; auto;
   unfold freshP_a, action, prmact, fun_supp_act, equiv, fun_supp_equiv in H3; simpl in *;
-  specialize (H3 b H6 x); specialize (H4 b H7); rewrite <-perm_inv, H4 in H3; assumption.
+  specialize (H3 b H5 x); specialize (H4 b H7); rewrite <-perm_inv, H4 in H3; assumption.
 Qed.
