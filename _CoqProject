@@ -15,5 +15,6 @@ theories/Fresh.v
 theories/SuppFun.v
 
 theories/Instances/Name.v
+theories/Instances/Prod.v
 
 theories/Alpha.v
