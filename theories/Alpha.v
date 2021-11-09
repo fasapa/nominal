@@ -1,25 +1,26 @@
 Require Import Coq.Classes.RelationClasses.
-From Nominal Require Import Nominal Fresh Instances.Name.
+From Nominal Require Export Nominal Fresh Instances.Name.
 
 (* Record NameAbstraction `{Nominal X} (a1x1 a2x2: name * X) := mkNameAbstraction {
     new: name;
     new_fresh1: new # (snd a1x1);
     new_fresh2: new # (snd a2x2);
-    new_fixpoint: ⟨new, fst a1x1⟩ • (snd a1x1) ≡@{X} ⟨new, fst a2x2⟩ • (snd a2x2) 
+    new_fixpoint: ⟨new, fst a1x1⟩ ∙ (snd a1x1) ≡@{X} ⟨new, fst a2x2⟩ ∙ (snd a2x2) 
 }. *)
 
 Definition NameAbstraction_e `{Nominal X} (a1x1 a2x2: name * X) :=
     ∃ (b: name), b #(fst a1x1, fst a2x2, snd a1x1, snd a2x2) ∧ 
-                 ⟨b,fst a1x1⟩ • (snd a1x1) ≡@{X} ⟨b,fst a2x2⟩ • (snd a2x2).
+                 ⟨b,fst a1x1⟩ ∙ (snd a1x1) ≡@{X} ⟨b,fst a2x2⟩ ∙ (snd a2x2).
 
 Definition NameAbstraction_a `{Nominal X} (a1x1 a2x2: name * X) :=
     ∀ (b: name), b #(fst a1x1, fst a2x2, snd a1x1, snd a2x2) →
-                 ⟨b,fst a1x1⟩ • (snd a1x1) ≡@{X} ⟨b,fst a2x2⟩ • (snd a2x2).
+                 ⟨b,fst a1x1⟩ ∙ (snd a1x1) ≡@{X} ⟨b,fst a2x2⟩ ∙ (snd a2x2).
 
 Instance alpha_equiv_e `{Nominal X}: Equiv (name * X) | 0 := NameAbstraction_e.
 Instance alpha_equiv_a `{Nominal X}: Equiv (name * X) | 1 := NameAbstraction_a.
     
 Infix "≈α" := (alpha_equiv_e) (at level 70, no associativity).
+Notation "(≈α)" := (alpha_equiv_e) (only parsing).
 Infix "≈αₐ" := (alpha_equiv_a) (at level 70, no associativity).
 
 Section AlphaEquivalence.

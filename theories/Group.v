@@ -75,17 +75,17 @@ Class Action A X := action: A → X → X.
 (* CAUSA PROBLEMAS COM REESCRITA ENVOLVENDO action (- p)
   Instance: Params (@action) 2 := {}. *)
 
-Infix "•" := action (at level 60, right associativity) : nominal_scope.
-Notation "(•)" := action (only parsing) : nominal_scope.
-Notation "(• x )" := (action x) (only parsing) : nominal_scope.
-Notation "( x •)" := (λ y, action y x) (only parsing): nominal_scope.
+Infix "∙" := action (at level 60, right associativity) : nominal_scope.
+Notation "(∙)" := action (only parsing) : nominal_scope.
+Notation "(∙ x )" := (action x) (only parsing) : nominal_scope.
+Notation "( x ∙)" := (λ y, action y x) (only parsing): nominal_scope.
 
 Class GAction `(Group G) (X : Type) `{Act : Action G X, Equiv X} : Prop := {
   gact_setoid :> Equivalence(≡@{X});
-  gact_proper :> Proper ((≡@{G}) ⟹ (≡@{X}) ⟹ (≡@{X})) (•);
+  gact_proper :> Proper ((≡@{G}) ⟹ (≡@{X}) ⟹ (≡@{X})) (∙);
 
-  gact_id : ∀ (x: X), ɛ@{G} • x ≡@{X} x;
-  gact_compat: ∀ (p q: G) (x: X), p • (q • x) ≡@{X} (q + p) • x
+  gact_id : ∀ (x: X), ɛ@{G} ∙ x ≡@{X} x;
+  gact_compat: ∀ (p q: G) (x: X), p ∙ (q ∙ x) ≡@{X} (q + p) ∙ x
 }.
 
 Existing Instance gact_proper.
@@ -97,22 +97,22 @@ Arguments gact_proper {_ _ _ _ _ Grp _ _ _ GAct} : rename.
 Section GroupActionProperties.
   Context `{GAction G X}.
 
-  Corollary perm_left_inv (x: X) (p: G): (-p) • p • x ≡ x.
+  Corollary perm_left_inv (x: X) (p: G): (-p) ∙ p ∙ x ≡ x.
   Proof. rewrite gact_compat, grp_right_inv, gact_id; auto. Qed.
 
-  Corollary perm_rigth_inv (x: X) (p: G): p • (-p) • x ≡ x.
+  Corollary perm_rigth_inv (x: X) (p: G): p ∙ (-p) ∙ x ≡ x.
   Proof. rewrite gact_compat, grp_left_inv, gact_id; auto. Qed.
 
-  Lemma perm_iff (x y: X) (p: G): p • x ≡ y ↔ x ≡ (-p) • y.
+  Lemma perm_iff (x y: X) (p: G): p ∙ x ≡ y ↔ x ≡ (-p) ∙ y.
   Proof. split; intros A; 
     [rewrite <-A, perm_left_inv | rewrite A, perm_rigth_inv]; auto.
   Qed.
 
-  Lemma perm_inj (x y: X) (p: G): p • x ≡ p • y ↔ x ≡ y.
+  Lemma perm_inj (x y: X) (p: G): p ∙ x ≡ p ∙ y ↔ x ≡ y.
   Proof. split; intros A; 
     [apply perm_iff in A; rewrite <-(perm_left_inv y p) | rewrite A]; auto.
   Qed.
 
-  Lemma perm_inv_empty_act (x: X) : -ɛ@{G} • x ≡ x.
+  Lemma perm_inv_empty_act (x: X) : -ɛ@{G} ∙ x ≡ x.
   Proof. rewrite grp_inv_neutral; apply gact_id. Qed.
 End GroupActionProperties.

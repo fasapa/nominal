@@ -3,11 +3,11 @@ From Nominal Require Import Nominal.
 (* Record freshT `{Nominal X} (a: name) (x: X): Type := mkFreshT {
   new: name;
   new_fresh: new ∉ support x;
-  new_fixpoint: ⟨a,new⟩ • x ≡@{X} x
+  new_fixpoint: ⟨a,new⟩ ∙ x ≡@{X} x
 }. *)
 
-Definition freshP_e `{Nominal X} (a: name) (x: X) := ∃ (b : name), b ∉ support x ∧ ⟨a,b⟩ • x ≡@{X} x.
-Definition freshP_a `{Nominal X} (a: name) (x: X) := ∀ (b : name), b ∉ support x → ⟨a,b⟩ • x ≡@{X} x.
+Definition freshP_e `{Nominal X} (a: name) (x: X) := ∃ (b : name), b ∉ support x ∧ ⟨a,b⟩ ∙ x ≡@{X} x.
+Definition freshP_a `{Nominal X} (a: name) (x: X) := ∀ (b : name), b ∉ support x → ⟨a,b⟩ ∙ x ≡@{X} x.
 
 (* Infix "#" := freshT (at level 50). *)
 (* Infix "#ₚₑ" := freshP_e (at level 50). *)
@@ -56,7 +56,7 @@ Proof. intros; apply some_any, support_fresh_e; auto. Qed. *)
 Lemma fresh_support_fresh `{Nominal X} (x: X): fresh (support x) # x.
 Proof. constructor 1 with (fresh (support x)); split; [apply is_fresh | apply perm_action_equal]. Qed.
 
-Lemma fresh_fixpoint `{Nominal X} (a b : name) (x : X) : a # x → b # x → ⟨a,b⟩ • x ≡ x.
+Lemma fresh_fixpoint `{Nominal X} (a b : name) (x : X) : a # x → b # x → ⟨a,b⟩ ∙ x ≡ x.
 Proof.
   intros FA FB; destruct (decide (a = b)); subst.
   - apply perm_action_equal.

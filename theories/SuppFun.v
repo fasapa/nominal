@@ -8,7 +8,7 @@ Section SupportedFunctions.
     f_supp: nameset; (* Function support *)
     f_proper: Proper ((≡@{X}) ⟹ (≡@{Y})) f_car;
     f_supp_spec: ∀ (a b: name), a ∉ f_supp → b ∉ f_supp →
-        ∀ (x: X), (⟨a,b⟩ • (f_car (⟨a,b⟩ • x))) ≡@{Y} f_car x 
+        ∀ (x: X), (⟨a,b⟩ ∙ (f_car (⟨a,b⟩ ∙ x))) ≡@{Y} f_car x 
   }.
 End SupportedFunctions.
 
@@ -33,7 +33,7 @@ Section FunSuppProperties.
     Proof. intros ? ? HH1 ? ? HH2; rewrite HH2; apply HH1. Qed.
 
     #[global,refine] Instance fun_supp_act: PermAct (X →ₛ Y) :=
-      λ p (f: X →ₛ Y), (λₛ (x: X), p • f(-p • x)).
+      λ p (f: X →ₛ Y), (λₛ (x: X), p ∙ f(-p ∙ x)).
     Proof. 
       all:try (assumption || typeclasses eauto).
       - exact ((f_supp f) ∪ (perm_dom p)).

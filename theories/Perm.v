@@ -197,13 +197,13 @@ Proof. apply gact_proper. Qed.
 Section PermProperties.
   Context `{Perm X} (a b c : name) (x : X).
 
-  Lemma perm_action_duplicate: ⟨a,b⟩ • ⟨a,b⟩ • x ≡ x.
+  Lemma perm_action_duplicate: ⟨a,b⟩ ∙ ⟨a,b⟩ ∙ x ≡ x.
   Proof. rewrite gact_compat, perm_duplicate; apply gact_id. Qed.
 
-  Lemma perm_action_equal: ⟨a,a⟩ • x ≡ x.
+  Lemma perm_action_equal: ⟨a,a⟩ ∙ x ≡ x.
   Proof. rewrite perm_equiv_neutral; apply gact_id. Qed.
 
-  Lemma perm_comm p: a ∉ perm_dom p → b ∉ perm_dom p → ⟨a,b⟩ • p • x ≡ p • ⟨a,b⟩ • x.
+  Lemma perm_comm p: a ∉ perm_dom p → b ∉ perm_dom p → ⟨a,b⟩ ∙ p ∙ x ≡ p ∙ ⟨a,b⟩ ∙ x.
   Proof. intros; rewrite gact_compat, <-perm_notin_dom_comm, <-gact_compat; auto. Qed.
 
 End PermProperties.

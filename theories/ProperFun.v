@@ -38,7 +38,7 @@ Section ProperFunPerm.
   Context `{Perm A, Perm B}.
 
   #[global,refine] Instance fun_proper_act: PermAct (A →ₚ B) :=
-    λ p (f: A →ₚ B), (λₚ (a: A), p • f(-p • a)).
+    λ p (f: A →ₚ B), (λₚ (a: A), p ∙ f(-p ∙ a)).
   Proof. 
     all:try (assumption || typeclasses eauto);
     repeat intro; rewrite H3; reflexivity. 
