@@ -9,12 +9,15 @@ theories/Prelude.v
 theories/Group.v
 theories/Atom.v
 theories/Perm.v
-theories/ProperFun.v
+#theories/ProperFun.v
 theories/Nominal.v
 theories/Fresh.v
-theories/SuppFun.v
 
 theories/Instances/Name.v
-theories/Instances/Prod.v
 
 theories/Alpha.v
+
+theories/Instances/Prod.v
+theories/Instances/NameAbstraction.v
+theories/Instances/SuppFun.v
+

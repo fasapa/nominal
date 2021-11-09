@@ -81,3 +81,12 @@ Section AlphaEquivalenceProperties.
     Qed.
 
 End AlphaEquivalenceProperties.
+
+Lemma alpha_rename `{Nominal X} a a' (x: X): a' # x → (a,x) ≈α (a', ⟨a',a⟩ ∙ x).
+Proof.
+    intros; destruct (decide (a = a')); subst.
+    - apply alpha_equiv_some_any; repeat intro; simpl in *; rewrite perm_action_equal; reflexivity.
+    - new b fresh a a' x (⟨a',a⟩ ∙ x); exists b; simpl; split; [intuition |]; 
+        rewrite (perm_expand _ a' _), <-2!gact_compat, (fresh_fixpoint b a' x); auto; 
+        apply not_eq_sym,name_neq_fresh_iff; auto.
+Qed.

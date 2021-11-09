@@ -105,3 +105,7 @@ destruct_notin_union; support_fresh_tac.
 Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) constr(H4) constr(H5) constr(H6) :=
 destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5 ∪ support H6)) as [w ?];
 destruct_notin_union; support_fresh_tac.
+
+Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) constr(H4) constr(H5) constr(H6) constr(H7) constr(H8) :=
+destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5 ∪ support H6 ∪ support H7 ∪ support H8)) as [w ?];
+destruct_notin_union; support_fresh_tac.
