@@ -187,7 +187,7 @@ Class PermAct X := prmact :> Action perm X.
 #[global] Hint Mode PermAct ! : typeclass_instances.
 (* Instance: Params (@pact) 1 := {}. *)
 
-Polymorphic Class Perm (X : Type) `{P: PermAct X, Equiv X} := 
+Class Perm (X : Type) `{P: PermAct X, Equiv X} := 
   prmtype :> GAction PermGrp X (Act := @prmact X P).
 #[global] Hint Mode Perm ! - - : typeclass_instances.
 

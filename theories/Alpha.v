@@ -8,20 +8,16 @@ From Nominal Require Export Nominal Fresh Instances.Name.
     new_fixpoint: ⟨new, fst a1x1⟩ ∙ (snd a1x1) ≡@{X} ⟨new, fst a2x2⟩ ∙ (snd a2x2) 
 }. *)
 
-Definition NameAbstraction_e `{Nominal X} (a1x1 a2x2: name * X) :=
-    ∃ (b: name), b #(fst a1x1, fst a2x2, snd a1x1, snd a2x2) ∧ 
-                 ⟨b,fst a1x1⟩ ∙ (snd a1x1) ≡@{X} ⟨b,fst a2x2⟩ ∙ (snd a2x2).
+Instance alpha_equiv_e `{Nominal X}: Equiv (name * X) | 0 := 
+    λ '(a1,x1) '(a2,x2), ∃ (b: name), b #(a1, a2, x1, x2) ∧ ⟨b,a1⟩ ∙ x1 ≡@{X} ⟨b,a2⟩ ∙ x2.
 
-Definition NameAbstraction_a `{Nominal X} (a1x1 a2x2: name * X) :=
-    ∀ (b: name), b #(fst a1x1, fst a2x2, snd a1x1, snd a2x2) →
-                 ⟨b,fst a1x1⟩ ∙ (snd a1x1) ≡@{X} ⟨b,fst a2x2⟩ ∙ (snd a2x2).
-
-Instance alpha_equiv_e `{Nominal X}: Equiv (name * X) | 0 := NameAbstraction_e.
-Instance alpha_equiv_a `{Nominal X}: Equiv (name * X) | 1 := NameAbstraction_a.
+Instance alpha_equiv_a `{Nominal X}: Equiv (name * X) | 1 := 
+    λ '(a1,x1) '(a2,x2), ∀ (b: name), b #(a1, a2, x1, x2) → ⟨b,a1⟩ ∙ x1 ≡@{X} ⟨b,a2⟩ ∙ x2.
     
 Infix "≈α" := (alpha_equiv_e) (at level 70, no associativity).
 Notation "(≈α)" := (alpha_equiv_e) (only parsing).
 Infix "≈αₐ" := (alpha_equiv_a) (at level 70, no associativity).
+Notation "(≈αₐ)" := (alpha_equiv_a) (only parsing).
 
 Section AlphaEquivalence.
     Context `{Nominal X}.
@@ -29,8 +25,7 @@ Section AlphaEquivalence.
     Lemma alpha_equiv_some_any `{Nominal X} a1 a2 x1 x2 :
         (a1, x1) ≈α (a2, x2) ↔ (a1, x1) ≈αₐ (a2, x2).
     Proof.
-        split; intros Hα; unfold alpha_equiv_e, alpha_equiv_a, NameAbstraction_e, NameAbstraction_a in *;
-            simpl in *.
+        split; intros Hα; unfold alpha_equiv_e, alpha_equiv_a in *.
         - intros; simpl in *; destruct Hα as [y [? Hα]]; destruct_and!;
             rewrite (perm_expand _ y a1), (perm_expand _ y a2), <-!gact_compat, 
                 (fresh_fixpoint _ _ x1), (fresh_fixpoint _ _ x2), Hα;
@@ -43,8 +38,8 @@ Section AlphaEquivalence.
         split.
         - intros [a x]; destruct (exist_fresh (support a ∪ support x)) as [y []%not_elem_of_union];
             exists y; split_and!; simpl; try (apply support_fresh); auto.
-        - intros ? ? [z ?]; exists z; intuition. 
-        - intros [a x] [b y] [c z] ? ?; simpl in *.
+        - intros [? ?] [? ?] [z ?]; exists z; intuition. 
+        - intros [a x] [b y] [c z] ? ?; simpl in *;
             new f fresh a x b y c z; apply alpha_equiv_some_any in H1,H2; exists f; split; simpl;
                 [| rewrite (H1 f), (H2 f)]; intuition. 
     Qed.
@@ -63,7 +58,7 @@ Section AlphaEquivalence.
 End AlphaEquivalence.
 
 Section AlphaEquivalenceProperties.
-    Context `{Nominal X} (a1 a2 : name) (x1 x2 : X).
+    Context `{Nominal X} (a1 a2: name) (x1 x2: X).
 
     Lemma alpha_inv1: (a1, x1) ≈α (a2, x2) → a1 = a2 → x1 ≡ x2.
     Proof. intros [? [? ?]] ?; subst; eapply perm_inj; eauto. Qed.
@@ -79,7 +74,6 @@ Section AlphaEquivalenceProperties.
         cut (w #( a1, a2, x1, x2)); [intros FF | set_solver];
         specialize (A w FF); simpl in *; rewrite 2!fresh_fixpoint in A; auto.
     Qed.
-
 End AlphaEquivalenceProperties.
 
 Lemma alpha_rename `{Nominal X} a a' (x: X): a' # x → (a,x) ≈α (a', ⟨a',a⟩ ∙ x).
