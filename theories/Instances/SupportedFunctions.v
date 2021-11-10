@@ -32,7 +32,7 @@ Section FunSuppProperties.
     #[global] Instance: Proper (fun_supp_equiv ⟹ (≡@{X}) ⟹ (≡@{Y})) (f_car X Y).
     Proof. intros ? ? HH1 ? ? HH2; rewrite HH2; apply HH1. Qed.
 
-    #[global,refine] Instance fun_supp_act: PermAct (X →ₛ Y) :=
+    #[global,refine] Instance fun_supp_act: PermAction (X →ₛ Y) :=
       λ p (f: X →ₛ Y), (λₛ (x: X), p ∙ f(-p ∙ x)).
     Proof. 
       all:try (assumption || typeclasses eauto).
@@ -61,7 +61,7 @@ Section FunSuppProperties.
     Proof.
       split.
       - apply fun_supp_perm.
-      - intros f ? ? ? x; unfold support, fun_supp_support, action, prmact, fun_supp_act, equiv, fun_supp_equiv in *;
+      - intros f ? ? ? x; unfold support, fun_supp_support, action, fun_supp_act, equiv, fun_supp_equiv in *;
         simpl; intros; rewrite <-perm_inv; apply f_supp_spec; assumption.
     Qed.
 End FunSuppProperties.
@@ -74,6 +74,6 @@ Proof.
   intros; apply some_any_iff in H3,H4;
   destruct (exist_fresh (support f ∪ support x ∪ support (f x))) as [b]; destruct_notin_union;
   exists b; split; auto;
-  unfold freshP_a, action, prmact, fun_supp_act, equiv, fun_supp_equiv in H3; simpl in *;
+  unfold freshP_a, action, fun_supp_act, equiv, fun_supp_equiv in H3; simpl in *;
   specialize (H3 b H5 x); specialize (H4 b H7); rewrite <-perm_inv, H4 in H3; assumption.
 Qed.

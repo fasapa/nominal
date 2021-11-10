@@ -9,7 +9,7 @@ Section Nominal.
 
   Class Nominal `{Spt: Support X}: Prop := {
     nperm :> Perm X;
-    support_spec : ∀ (x: X) (a b: name),
+    support_spec: ∀ (x: X) (a b: name),
       a ∉ (support x) → b ∉ (support x) → ⟨a,b⟩ ∙ x ≡@{X} x
 }.
 End Nominal.

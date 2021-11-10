@@ -15,7 +15,7 @@ Proof.
     [apply EQUIV | apply EQUIV | destruct EQUIV; etransitivity]; eauto.
 Qed.
 
-Instance name_abstraction_action `{Nominal X}: PermAct [𝔸]X := λ p a, mkAbstraction (p ∙ (fst a), p ∙ (snd a)). 
+Instance name_abstraction_action `{Nominal X}: PermAction [𝔸]X := λ p a, mkAbstraction (p ∙ (fst a), p ∙ (snd a)). 
 
 Instance name_abstraction_perm `{Nominal X}: Perm [𝔸]X.
 Proof.
@@ -23,7 +23,7 @@ Proof.
     split.
     - exact name_abstraction_equivalence.
     - intros p q Heq1 [[a x]] [[b x']] Heq2;
-        unfold action, prmact, name_abstraction_action, equiv, name_abstraction_equiv;
+        unfold action, name_abstraction_action, equiv, name_abstraction_equiv;
         unfold equiv, name_abstraction_equiv in Heq2; simpl in *.
         new w fresh p q a b x x' (p ∙ x) (q ∙ x'); exists w; apply alpha_equiv_some_any in Heq2; split.
         + split_and!; try apply name_fresh_action; auto.
@@ -31,9 +31,9 @@ Proof.
             (* slow *)rewrite <-W1 at 1. (* slow *)rewrite <-W2 at 2.
             rewrite 2!gact_compat, <-2!perm_comm_distr, <-2!gact_compat, Heq1;
             apply perm_inj; apply Heq2; intuition.
-    - intros [[]]; unfold action, prmact, name_abstraction_action, prod_act, equiv, name_abstraction_equiv; simpl;
+    - intros [[]]; unfold action, name_abstraction_action, prod_act, equiv, name_abstraction_equiv; simpl;
         apply alpha_equiv_some_any; intros ? ?; simpl in *; rewrite 2!gact_id; reflexivity.
-    - intros ? ? [[]]; unfold action, prmact, name_abstraction_action, prod_act, equiv, name_abstraction_equiv;
+    - intros ? ? [[]]; unfold action, name_abstraction_action, prod_act, equiv, name_abstraction_equiv;
         apply alpha_equiv_some_any; intros ? ?; simpl in *; rewrite <-2!gact_compat; reflexivity.
 Qed.
 
@@ -53,8 +53,6 @@ Proof. split.
 Qed.
 
 (* Basic properties *)
-Print Instances PermAct.
-
 Lemma abs_action `{Nominal X} p a x: p ∙ [a]x = [p ∙ a](p ∙ x).
 Proof. auto. Qed.
 

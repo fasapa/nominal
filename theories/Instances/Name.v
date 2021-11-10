@@ -1,13 +1,13 @@
 (* Name forms a nominal set *)
 From Nominal Require Import Atom Nominal Fresh.
 
-Instance name_action : PermAct name := swap_perm.
-Instance name_equiv : Equiv name := eq.
-Instance name_support : Support name := singleton.
+Instance name_action: PermAction name := swap_perm.
+Instance name_equiv: Equiv name := eq.
+Instance name_support: Support name := singleton.
 
 Instance name_perm : Perm name.
 Proof. 
-    split; unfold "≡",name_equiv,action, prmact, name_action in *; repeat intro.
+    split; unfold "≡", name_equiv,action,name_action in *; repeat intro.
     - typeclasses eauto.
     - subst; rewrite H; auto.
     - auto.

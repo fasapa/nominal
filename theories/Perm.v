@@ -182,20 +182,63 @@ Proof.
     rewrite perm_dom_concat in *; set_solver.
 Qed.
 
-(* Permutation action *)
-Class PermAct X := prmact :> Action perm X.
-#[global] Hint Mode PermAct ! : typeclass_instances.
-(* Instance: Params (@pact) 1 := {}. *)
+(* Group Action  *)
+Class PermAction X := action: perm → X → X.
+#[global] Hint Mode PermAction ! : typeclass_instances.
 
-Class Perm (X : Type) `{P: PermAct X, Equiv X} := 
-  prmtype :> GAction PermGrp X (Act := @prmact X P).
+(* CAUSA PROBLEMAS COM REESCRITA ENVOLVENDO action (- p)
+  Instance: Params (@action) 2 := {}. *)
+
+Infix "∙" := action (at level 60, right associativity): nominal_scope.
+Notation "(∙)" := action (only parsing): nominal_scope.
+Notation "(∙ x )" := (action x) (only parsing): nominal_scope.
+Notation "( x ∙)" := (λ y, action y x) (only parsing): nominal_scope.
+
+(* Permutation type is a type with a permutation group (left) action *)
+Class Perm (X : Type) `{Act: PermAction X, Equiv X}: Prop := {
+  gact_setoid :> Equivalence(≡@{X});
+  gact_proper :> Proper ((≡@{perm}) ⟹ (≡@{X}) ⟹ (≡@{X})) (∙);
+
+  gact_id: ∀ (x: X), ɛ@{perm} ∙ x ≡@{X} x;
+  gact_compat: ∀ (p q: perm) (x: X), p ∙ (q ∙ x) ≡@{X} (q + p) ∙ x
+}.
 #[global] Hint Mode Perm ! - - : typeclass_instances.
 
-#[global] Instance action_perm_proper `{Perm A}: Proper ((≡@{perm}) ⟹ (≡@{A}) ⟹ (≡@{A})) action.
-Proof. apply gact_proper. Qed.
+Existing Instance gact_setoid.
+Existing Instance gact_proper.
+
+(* Arguments gact_id {_ _ _ _ _ Grp _ _ _ GAct} : rename.
+Arguments gact_compat {_ _ _ _ _ Grp _ _ _ GAct} : rename.
+Arguments gact_proper {_ _ _ _ _ Grp _ _ _ GAct} : rename. *)
+
+Section GroupActionProperties.
+  Context `{Perm X}.
+
+  Corollary perm_left_inv (x: X) p: (-p) ∙ p ∙ x ≡ x.
+  Proof. rewrite gact_compat, grp_right_inv, gact_id; auto. Qed.
+
+  Corollary perm_rigth_inv (x: X) p: p ∙ (-p) ∙ x ≡ x.
+  Proof. rewrite gact_compat, grp_left_inv, gact_id; auto. Qed.
+
+  Lemma perm_iff (x y: X) p: p ∙ x ≡ y ↔ x ≡ (-p) ∙ y.
+  Proof. split; intros A; 
+    [rewrite <-A, perm_left_inv | rewrite A, perm_rigth_inv]; auto.
+  Qed.
+
+  Lemma perm_inj (x y: X) p: p ∙ x ≡ p ∙ y ↔ x ≡ y.
+  Proof. split; intros A; 
+    [apply perm_iff in A; rewrite <-(perm_left_inv y p) | rewrite A]; auto.
+  Qed.
+
+  Lemma perm_inv_empty_act (x: X): (-ɛ) ∙ x ≡ x.
+  Proof. rewrite grp_inv_neutral; apply gact_id. Qed.
+End GroupActionProperties.
+
+(* #[global] Instance action_perm_proper `{Perm A}: Proper ((≡@{perm}) ⟹ (≡@{A}) ⟹ (≡@{A})) action.
+Proof. apply gact_proper. Qed. *)
 
 Section PermProperties.
-  Context `{Perm X} (a b c : name) (x : X).
+  Context `{Perm X} (a b c: name) (x: X).
 
   Lemma perm_action_duplicate: ⟨a,b⟩ ∙ ⟨a,b⟩ ∙ x ≡ x.
   Proof. rewrite gact_compat, perm_duplicate; apply gact_id. Qed.
@@ -207,5 +250,3 @@ Section PermProperties.
   Proof. intros; rewrite gact_compat, <-perm_notin_dom_comm, <-gact_compat; auto. Qed.
 
 End PermProperties.
-
-
