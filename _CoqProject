@@ -10,10 +10,10 @@ theories/Group.v
 theories/Atom.v
 theories/Perm.v
 theories/Nominal.v
-theories/Fresh.v
 
 theories/Instances/Name.v
 
+theories/Fresh.v
 theories/Alpha.v
 
 theories/Instances/Prod.v

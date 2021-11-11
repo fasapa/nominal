@@ -1,4 +1,4 @@
-From Nominal Require Import Nominal.
+From Nominal Require Import Nominal Instances.Name.
 
 (* Record freshT `{Nominal X} (a: name) (x: X): Type := mkFreshT {
   new: name;
@@ -12,6 +12,8 @@ Definition freshP_a `{Nominal X} (a: name) (x: X) := ∀ (b : name), b ∉ suppo
 (* Infix "#" := freshT (at level 50). *)
 (* Infix "#ₚₑ" := freshP_e (at level 50). *)
 Infix "#" := freshP_e (at level 50).
+Notation "(#)" := (freshP_e) (only parsing).
+Notation "( a #)" := (freshP_e a) (only parsing).
 Notation "a #( x , y )" := (a # x ∧ a # y) (at level 50).
 Notation "a #( x , y , z )" := (a # x ∧ a # y ∧ a # z) (at level 50).
 Notation "a #( x , y , z , w )" := (a # x ∧ a # y ∧ a # z ∧ a # w) (at level 50).
@@ -73,6 +75,13 @@ Proof.
         Fp, (perm_swap k b), (support_spec x p k), Fk, (support_spec x p k), Fp; auto.
 Qed.
 
+Instance fresh_proper `{Nominal X} a: Proper ((≡@{X}) ⟹ flip impl) (a #).
+Proof.
+  intros x y Heq Hf; destruct (exist_fresh (support a ∪ support x ∪ support y)) as [w ?]; exists w; split;
+    [| apply some_any_iff in Hf; rewrite Heq; apply Hf]; set_solver.
+Qed.
+
+(* Fresh tactics *)
 Ltac support_fresh_tac :=
   repeat (match goal with
     | [H : _ ∉ support _ |- _] => apply support_fresh in H
@@ -109,3 +118,41 @@ destruct_notin_union; support_fresh_tac.
 Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) constr(H4) constr(H5) constr(H6) constr(H7) constr(H8) :=
 destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5 ∪ support H6 ∪ support H7 ∪ support H8)) as [w ?];
 destruct_notin_union; support_fresh_tac.
+
+(* Name and freshness *)
+Lemma name_fresh_neq (a b: name): a # b → a ≠ b.
+Proof. 
+    intros [c [? cF]]; destruct (decide (a = c)); subst.
+    - apply not_elem_of_singleton; auto.
+    - apply swap_neither2 in cF as [[] | []]; subst; auto.
+Qed.  
+
+Lemma name_neq_fresh (a b: name): a ≠ b → a # b.
+Proof. 
+    intros; constructor 1 with a; split;
+        [unfold support; apply not_elem_of_singleton | apply swap_neither1]; auto. 
+Qed.
+
+Lemma name_neq_fresh_iff (a b: name): a # b ↔ a ≠ b.
+Proof. split; [apply name_fresh_neq | apply name_neq_fresh]. Qed.
+
+(* FIXME: Por aonde? *)
+Instance perm_support: Support perm := λ p, perm_dom p.
+
+Lemma name_fresh_action p (a b: name): b # a → b ∉ perm_dom p → b # (p ∙ a).
+Proof.
+    intros HH ?; destruct (exist_fresh (support a ∪ support b ∪ support p ∪ support (p ∙ a))) as [w ?];
+    exists w; split; [set_solver |]; 
+    rewrite gact_compat, <-perm_notin_dom_comm, <-gact_compat; [| set_solver | set_solver].
+    apply some_any_iff in HH; cut (w ∉ support a); [intros HHH | set_solver]; 
+    specialize (HH w HHH); rewrite HH; reflexivity.
+Qed.
+
+(* Freshness properties *)
+Lemma fresh_equivariant `{Nominal X} p a (x: X): a # x → (p ∙ a) # (p ∙ x).
+Proof.
+  intro F; destruct (exist_fresh (support p ∪ support x ∪ support (p ∙ x))) as [w ?]; exists w;
+    split; [set_solver |]; cut (w ≡ p ∙ w); [intro HH | rewrite perm_notin_domain_id; set_solver]; 
+    rewrite HH,gact_compat,<-perm_comm_distr,<-gact_compat,fresh_fixpoint; auto.
+    destruct_notin_union; support_fresh_tac; auto.
+Qed.

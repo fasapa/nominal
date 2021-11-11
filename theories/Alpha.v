@@ -60,8 +60,11 @@ End AlphaEquivalence.
 Section AlphaEquivalenceProperties.
     Context `{Nominal X} (a1 a2: name) (x1 x2: X).
 
-    Lemma alpha_inv1: (a1, x1) ≈α (a2, x2) → a1 = a2 → x1 ≡ x2.
-    Proof. intros [? [? ?]] ?; subst; eapply perm_inj; eauto. Qed.
+    Lemma alpha_inv1: (a1, x1) ≈α (a1, x2) ↔ x1 ≡ x2.
+    Proof. split.
+        - intros [? [? ?]]; subst; eapply perm_inj; eauto.
+        - intros HH; apply alpha_equiv_some_any; intros w ?; rewrite HH. reflexivity.
+    Qed. 
 
     Lemma alpha_inv2: a1 = a2 → x1 ≡ x2 → (a1, x1) ≈α (a2, x2).
     Proof. 
