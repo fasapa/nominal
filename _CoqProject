@@ -12,11 +12,10 @@ theories/Perm.v
 theories/Nominal.v
 
 theories/Instances/Name.v
+theories/Instances/Prod.v
 
 theories/Fresh.v
 theories/Alpha.v
 
-theories/Instances/Prod.v
 theories/Instances/NameAbstraction.v
 theories/Instances/SupportedFunctions.v
-

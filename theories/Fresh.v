@@ -1,4 +1,4 @@
-From Nominal Require Import Nominal Instances.Name.
+From Nominal Require Import Nominal.
 
 (* Record freshT `{Nominal X} (a: name) (x: X): Type := mkFreshT {
   new: name;
@@ -75,12 +75,6 @@ Proof.
         Fp, (perm_swap k b), (support_spec x p k), Fk, (support_spec x p k), Fp; auto.
 Qed.
 
-Instance fresh_proper `{Nominal X} a: Proper ((≡@{X}) ⟹ flip impl) (a #).
-Proof.
-  intros x y Heq Hf; destruct (exist_fresh (support a ∪ support x ∪ support y)) as [w ?]; exists w; split;
-    [| apply some_any_iff in Hf; rewrite Heq; apply Hf]; set_solver.
-Qed.
-
 (* Fresh tactics *)
 Ltac support_fresh_tac :=
   repeat (match goal with
@@ -120,6 +114,14 @@ destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 �
 destruct_notin_union; support_fresh_tac.
 
 (* Name and freshness *)
+From Nominal Require Import Instances.Name.
+
+Instance fresh_proper `{Nominal X}: Proper ((≡@{name}) ⟹ (≡@{X}) ⟹ flip impl) (#).
+Proof.
+  intros a b HeqN x y HeqX; destruct (exist_fresh (support a ∪ support x ∪ support y)) as [w ?]; exists w; split;
+  [| apply some_any_iff in H2; rewrite HeqN, HeqX; apply H2]; destruct_notin_union; auto.
+Qed.
+
 Lemma name_fresh_neq (a b: name): a # b → a ≠ b.
 Proof. 
     intros [c [? cF]]; destruct (decide (a = c)); subst.
@@ -155,4 +157,22 @@ Proof.
     split; [set_solver |]; cut (w ≡ p ∙ w); [intro HH | rewrite perm_notin_domain_id; set_solver]; 
     rewrite HH,gact_compat,<-perm_comm_distr,<-gact_compat,fresh_fixpoint; auto.
     destruct_notin_union; support_fresh_tac; auto.
+Qed.
+
+From Nominal Require Import Instances.Prod.
+
+Lemma fresh_pair_iff `{Nominal X} (a b: name) (x: X): a # (b, x) ↔ a ≠ b ∧ a # x.
+Proof.
+  split; [intros [w [? Hf]] | intros []].
+    - unfold support,prod_support,action,prod_act,equiv,prod_equiv,prod_relation in *; simpl in *.
+      destruct Hf as [Hf1 Hf2]; split.
+      + unfold action, name_action in *; simpl in *; try repeat case_decide; subst; destruct_notin_union.
+        * support_fresh_tac; try apply name_fresh_neq in H1; congruence.
+        * exfalso; apply H1; set_solver.
+        * assumption.
+      + exists w; split; auto; destruct_notin_union; auto.
+    - destruct (exist_fresh (support a ∪ support b ∪ support x ∪ support (b, x))) as [w ?]; exists w; split.
+      + destruct_notin_union; set_solver.
+      + unfold action,equiv,prod_act,prod_equiv,prod_relation; split; simpl; apply fresh_fixpoint; auto; 
+        destruct_notin_union; support_fresh_tac; [apply name_neq_fresh_iff | |]; auto.
 Qed.
