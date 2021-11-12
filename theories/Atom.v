@@ -12,10 +12,10 @@ End ATOMIC.
 Module Atom : ATOMIC.
   Definition t := nat.
 
-  Instance dec : EqDecision t := nat_eq_dec.
-  Instance inf : Infinite t := nat_infinite.
+  #[export] Instance dec : EqDecision t := nat_eq_dec.
+  #[export] Instance inf : Infinite t := nat_infinite.
 End Atom.
-#[global] Existing Instances Atom.dec Atom.inf.
+#[export] Existing Instances Atom.dec Atom.inf.
 
 
 (* Elpi experiments name
@@ -46,8 +46,8 @@ Notation name := Atom.t.
 (* Finite set of names *)
 Definition nameset := (listset name).
 
-Lemma is_fresh_union_left (A B : nameset): fresh (A ∪ B) ∉ A.
+(* Lemma is_fresh_union_left (A B : nameset): fresh (A ∪ B) ∉ A.
 Proof. Admitted.
 
 Lemma is_fresh_union_right (A B : nameset): fresh (A ∪ B) ∉ B.
-Proof. Admitted.
+Proof. Admitted. *)

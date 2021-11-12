@@ -7,17 +7,17 @@ Arguments mkAbstraction {_ _ _ _ _} _.
 Notation " '[𝔸]' X " := (NameAbstraction X) (at level 1, no associativity, format "[𝔸] X").
 Notation " [ a ] x " := ({| abs := (a,x) |}) (at level 1, no associativity, format "[ a ] x").
 
-Instance name_abstraction_equiv `{Nominal X}: Equiv [𝔸]X := (≈α).
+#[export] Instance name_abstraction_equiv `{Nominal X}: Equiv [𝔸]X := (≈α).
 
-Instance name_abstraction_equivalence `{Nominal}: Equivalence name_abstraction_equiv.
+#[export] Instance name_abstraction_equivalence `{Nominal}: Equivalence name_abstraction_equiv.
 Proof.
     pose proof alpha_equivalence_e as EQUIV; split; unfold name_abstraction_equiv; repeat intro;
     [apply EQUIV | apply EQUIV | destruct EQUIV; etransitivity]; eauto.
 Qed.
 
-Instance name_abstraction_action `{Nominal X}: PermAction [𝔸]X := λ p a, mkAbstraction (p ∙ (fst a), p ∙ (snd a)). 
+#[export] Instance name_abstraction_action `{Nominal X}: PermAction [𝔸]X := λ p a, mkAbstraction (p ∙ (fst a), p ∙ (snd a)). 
 
-Instance name_abstraction_perm `{Nominal X}: Perm [𝔸]X.
+#[export] Instance name_abstraction_perm `{Nominal X}: Perm [𝔸]X.
 Proof.
     Opaque alpha_equiv_e.
     split.
@@ -37,9 +37,9 @@ Proof.
         apply alpha_equiv_some_any; intros ? ?; simpl in *; rewrite <-2!gact_compat; reflexivity.
 Qed.
 
-Instance name_abstraction_support `{Nominal X}: Support [𝔸]X := λ a, support (abs a).
+#[export] Instance name_abstraction_support `{Nominal X}: Support [𝔸]X := λ a, support (abs a).
 
-Instance name_abstraction_nominal `{Nominal X}: Nominal [𝔸]X.
+#[export] Instance name_abstraction_nominal `{Nominal X}: Nominal [𝔸]X.
 Proof. split.
     - exact name_abstraction_perm.
     - intros [[a x]] b c ? ?; destruct (decide (b = c)), (decide (b = a)), (decide (c = a)); 

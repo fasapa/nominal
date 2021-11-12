@@ -8,10 +8,10 @@ From Nominal Require Export Nominal Fresh Instances.Name.
     new_fixpoint: ⟨new, fst a1x1⟩ ∙ (snd a1x1) ≡@{X} ⟨new, fst a2x2⟩ ∙ (snd a2x2) 
 }. *)
 
-Instance alpha_equiv_e `{Nominal X}: Equiv (name * X) | 0 := 
+#[export] Instance alpha_equiv_e `{Nominal X}: Equiv (name * X) | 0 := 
     λ '(a1,x1) '(a2,x2), ∃ (b: name), b #(a1, a2, x1, x2) ∧ ⟨b,a1⟩ ∙ x1 ≡@{X} ⟨b,a2⟩ ∙ x2.
 
-Instance alpha_equiv_a `{Nominal X}: Equiv (name * X) | 1 := 
+#[export] Instance alpha_equiv_a `{Nominal X}: Equiv (name * X) | 1 := 
     λ '(a1,x1) '(a2,x2), ∀ (b: name), b #(a1, a2, x1, x2) → ⟨b,a1⟩ ∙ x1 ≡@{X} ⟨b,a2⟩ ∙ x2.
     
 Infix "≈α" := (alpha_equiv_e) (at level 70, no associativity).
@@ -104,4 +104,3 @@ Proof.
         rewrite (perm_expand _ a' _), <-2!gact_compat, (fresh_fixpoint b a' x); auto; 
         apply not_eq_sym,name_neq_fresh_iff; auto.
 Qed.
-

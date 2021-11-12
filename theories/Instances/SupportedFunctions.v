@@ -14,7 +14,7 @@ End SupportedFunctions.
 
 Arguments mkFunSupp {_ _ _ _ _ _} _ _ {_ _}.
 Arguments f_supp {_ _ _ _ _ _} _.
-Existing Instance f_proper.
+#[export] Existing Instance f_proper.
 
 Notation "'λₛ' x .. y , t" :=
   (@mkFunSupp _ _ _ _ _ _ (λ x, .. (@mkFunSupp _ _ _ _ _ _ (λ y, t) _ _ _) ..) _ _ _)

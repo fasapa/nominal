@@ -8,7 +8,7 @@ Notation "ɛ@{ A }" := (@neutral A _) (only parsing) : nominal_scope.
 
 Class Operator A := op: A → A → A.
 #[global] Hint Mode Operator ! : typeclass_instances.
-Instance: Params (@op) 2 := {}.
+#[export] Instance: Params (@op) 2 := {}.
 
 Infix "+" := op : nominal_scope.
 Notation "(+)" := op (only parsing) : nominal_scope.
@@ -17,7 +17,7 @@ Notation "( x +)" := (λ y, op y x) (only parsing) : nominal_scope.
 
 Class Inverse A := inv: A → A.
 #[global] Hint Mode Inverse ! : typeclass_instances.
-Instance: Params (@inv) 1 := {}.
+#[export] Instance: Params (@inv) 1 := {}.
 
 Notation "- x" := (inv x) : nominal_scope.
 Notation "(-)" := inv (only parsing) : nominal_scope.

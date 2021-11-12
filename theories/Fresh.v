@@ -116,7 +116,7 @@ destruct_notin_union; support_fresh_tac.
 (* Name and freshness *)
 From Nominal Require Import Instances.Name.
 
-Instance fresh_proper `{Nominal X}: Proper ((≡@{name}) ⟹ (≡@{X}) ⟹ flip impl) (#).
+#[export] Instance fresh_proper `{Nominal X}: Proper ((≡@{name}) ⟹ (≡@{X}) ⟹ flip impl) (#).
 Proof.
   intros a b HeqN x y HeqX; destruct (exist_fresh (support a ∪ support x ∪ support y)) as [w ?]; exists w; split;
   [| apply some_any_iff in H2; rewrite HeqN, HeqX; apply H2]; destruct_notin_union; auto.
@@ -125,7 +125,7 @@ Qed.
 Lemma name_fresh_neq (a b: name): a # b → a ≠ b.
 Proof. 
     intros [c [? cF]]; destruct (decide (a = c)); subst.
-    - apply not_elem_of_singleton; auto.
+    - apply (not_elem_of_singleton (C := nameset)); auto.
     - apply swap_neither2 in cF as [[] | []]; subst; auto.
 Qed.  
 
@@ -139,7 +139,7 @@ Lemma name_neq_fresh_iff (a b: name): a # b ↔ a ≠ b.
 Proof. split; [apply name_fresh_neq | apply name_neq_fresh]. Qed.
 
 (* FIXME: Por aonde? *)
-Instance perm_support: Support perm := λ p, perm_dom p.
+#[export] Instance perm_support: Support perm := λ p, perm_dom p.
 
 Lemma name_fresh_action p (a b: name): b # a → b ∉ perm_dom p → b # (p ∙ a).
 Proof.

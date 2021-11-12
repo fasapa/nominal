@@ -204,8 +204,8 @@ Class Perm (X : Type) `{Act: PermAction X, Equiv X}: Prop := {
 }.
 #[global] Hint Mode Perm ! - - : typeclass_instances.
 
-Existing Instance gact_setoid.
-Existing Instance gact_proper.
+#[export] Existing Instance gact_setoid.
+#[export] Existing Instance gact_proper.
 
 (* Arguments gact_id {_ _ _ _ _ Grp _ _ _ GAct} : rename.
 Arguments gact_compat {_ _ _ _ _ Grp _ _ _ GAct} : rename.
