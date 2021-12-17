@@ -155,7 +155,7 @@ Section PermGroupProperties.
 End PermGroupProperties.
 
 Lemma perm_inv a b: ⟨a,b⟩ ≡ -⟨a,b⟩.
-Proof. Admitted.
+Proof. unfold equiv, perm_equiv, inv, perm_inverse; simpl; intros; repeat (case_decide); auto. Qed.
 
 Lemma perm_comm_distr a b p: ⟨a,b⟩ + p ≡ p + ⟨swap_perm p a, swap_perm p b⟩.
 Proof.

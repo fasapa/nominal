@@ -4,7 +4,7 @@ From Nominal Require Export Prelude.
 Class Neutral A := neutral : A.
 #[global] Hint Mode Neutral ! : typeclass_instances.
 Notation ɛ := neutral.
-Notation "ɛ@{ A }" := (@neutral A _) (only parsing) : nominal_scope.
+Notation "ɛ@{ A }" := (@neutral A _) (only parsing): nominal_scope.
 
 Class Operator A := op: A → A → A.
 #[global] Hint Mode Operator ! : typeclass_instances.
@@ -64,6 +64,22 @@ Section GroupProperties.
   Corollary grp_inv_inj (x y: G): x ≡ y → (-x) ≡ (-y).
   Proof. apply grp_inv_proper. Qed.
 
-  Lemma perm_op_inv (x y: G) : -x - y ≡ -(y + x).
-  Proof. Admitted.
+  Corollary grp_inj1 (x y z: G): x ≡ y → z + x ≡ z + y.
+  Proof. intros HH; rewrite HH; auto. Qed.
+
+  Corollary grp_inj (x y z: G): x + y ≡ x + z → y ≡ z.
+  Proof. intros HH; apply grp_inj1 with (z := -x) in HH; 
+    rewrite !grp_assoc,grp_left_inv,!grp_left_id in HH; assumption.
+  Qed.
+
+  Lemma perm_op_inv (x y: G): -(x + y) ≡ -y - x.
+  Proof.
+    assert (L1: (x + y) + (-(x + y)) ≡ ɛ).
+    { apply grp_right_inv. }
+    assert (L2: x + y + (- y - x) ≡ x + (y - y) - x). { rewrite !grp_assoc; reflexivity. }
+    assert (L3: (x + y) + (-y - x) ≡ ɛ).
+    { rewrite L2, grp_right_inv, grp_right_id; apply grp_right_inv. } clear L2.
+    apply grp_inj with (x := x + y); rewrite L1,L3; reflexivity.
+  Qed. 
+
 End GroupProperties.
