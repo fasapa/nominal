@@ -51,7 +51,7 @@ Section FunSuppProperties.
       - intros ? ? EE f g EF ?; simpl; rewrite EE, EF; reflexivity.
       - unfold equiv, fun_supp_equiv; intros; simpl; rewrite gact_id, grp_inv_neutral, gact_id;
         reflexivity.
-      - unfold equiv, fun_supp_equiv; intros; simpl; rewrite <-perm_op_inv, 2!gact_compat;
+      - unfold equiv, fun_supp_equiv; intros; simpl; rewrite perm_op_inv, 2!gact_compat;
         reflexivity.
     Qed.
 

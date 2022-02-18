@@ -51,42 +51,49 @@ Proof. split.
 Qed.
 
 (* Basic properties *)
-Lemma nabs_action `{Nominal X} p a x: p ∙ [a]x = [p ∙ a](p ∙ x).
+Lemma nabs_action `{Nominal X} p a (x: X): p ∙ [a]x = [p ∙ a](p ∙ x).
 Proof. auto. Qed.
 
-Lemma nabs_support `{Nominal X} a x: support [a]x = support a ∪ support x.
+Lemma nabs_support `{Nominal X} a (x: X): support [a]x = support a ∪ support x.
 Proof. auto. Qed.
 
-Lemma nabs_inv `{Nominal X} a x x': [a]x ≡ [a]x' ↔ x ≡ x'.
+Lemma nabs_inv `{Nominal X} a (x x': X): [a]x ≡ [a]x' ↔ x ≡ x'.
 Proof. split; intros HH.
     - unfold equiv, name_abstraction_equiv in HH; apply alpha_inv_name_equiv_iff in HH; auto. 
     - apply (alpha_inv_name_equiv_iff a) in HH; assumption.
 Qed.
 
-Lemma lol `{Nominal} a a' x: a' # [a]x ↔ a = a' ∨ a' # x.  
+Lemma fresh_same_alpha_class `{Nominal X} a (x: X): a # [a]x.
 Proof.
-    split; intros.
-    - destruct (decide (a = a')); subst.
-        + left. auto.
-        + right; destruct (exist_fresh (support a ∪ support a' ∪ support x ∪ support [a]x)) as [w ?].
-            exists w; split; [set_solver |]; apply some_any_iff in H1; cut (w ∉ support [a]x); [intros I | set_solver];
-            specialize (H1 w I); unfold equiv,name_abstraction_equiv in H1; simpl in H1.
-            assert (L: ⟨ a', w ⟩ ∙ a = a). { rewrite swap_perm_neither; auto; apply not_eq_sym,name_neq_fresh_iff; destruct_notin_union; support_fresh_tac; auto. }
-            rewrite L in H1; apply alpha_inv_name_equiv_iff in H1; assumption.
-    - assert (L: a = a' → a' # [a]x). {
-        intros; subst; destruct (exist_fresh (support a' ∪ support x)) as [w ?]; exists w; split.
-        * auto.
-        * unfold equiv, name_abstraction_equiv; simpl; rewrite swap_perm_left; apply alpha_inv; right; split.
-            -- apply fresh_pair_iff; split; destruct_notin_union; support_fresh_tac; [apply name_neq_fresh_iff |]; auto.
-            -- rewrite perm_swap; auto.
-    } destruct H1.
-        + auto. 
-        + destruct (decide (a = a')); subst.
-            * auto. 
-            * clear L; destruct (exist_fresh (support a ∪ support a' ∪ support x)) as [w ?]; exists w; split.   
-                -- unfold support, name_abstraction_support, support, prod_support; simpl; set_solver. 
-                -- unfold equiv, name_abstraction_equiv; simpl; rewrite swap_perm_neither; auto.
-                    ++ apply alpha_inv_name_equiv_iff; auto; apply fresh_fixpoint; auto; destruct_notin_union; support_fresh_tac; auto.
-                    ++ apply not_eq_sym, name_fresh_neq; destruct_notin_union; support_fresh_tac; auto.
+    destruct (exist_fresh (support a ∪ support x)) as [w ?]; exists w.
+    split; [auto |].
+    unfold equiv, name_abstraction_equiv; simpl.
+    rewrite swap_perm_left; apply alpha_inv; right; split.
+    - apply fresh_pair_iff; split; [| apply support_fresh]; set_solver.
+    - rewrite perm_swap; reflexivity.
 Qed.
+
+Lemma alpha_class_inv1 `{Nominal X} (a a': name) (x: X): a = a' ∨ a' # x → a' # [a]x.
+Proof.
+    intros [EqA | F]; [rewrite EqA | destruct (decide (a = a')); subst]; try apply fresh_same_alpha_class.
+    destruct (exist_fresh (support a ∪ support a' ∪ support x)) as [w ?]; exists w.
+    split; [set_solver |].
+    unfold equiv, name_abstraction_equiv; simpl.
+    rewrite swap_perm_neither; try set_solver.
+    apply alpha_inv_name_equiv_iff, fresh_fixpoint; [assumption | apply support_fresh]; set_solver.
+Qed.
+
+Lemma alpha_class_inv2 `{Nominal X} (a a': name) (x: X): a' # [a]x → a = a' ∨ a' # x.
+Proof.
+    intros F; destruct (decide (a = a')); subst; [intuition |].
+    right. (* a ≠ a' *)
+    destruct (exist_fresh (support a ∪ support a' ∪ support x ∪ support [a]x)) as [w ?]; exists w.
+    split; [set_solver |]; apply some_any_iff in F; cut (w ∉ support [a]x); [intros Hw | set_solver].
+    specialize (F w Hw); unfold equiv, name_abstraction_equiv in F. 
+    simpl in F. assert (L: ⟨a',w⟩ ∙ a = a). { apply swap_perm_neither; set_solver. }
+    rewrite L in F; apply alpha_inv_name_equiv_iff in F; assumption.
+Qed.
+
+Lemma alpha_class_inv `{Nominal X} (a a': name) (x: X): a = a' ∨ a' # x ↔ a' # [a]x.
+Proof. split; [apply alpha_class_inv1 | apply alpha_class_inv2]. Qed.
     
