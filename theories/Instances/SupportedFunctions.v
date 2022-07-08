@@ -8,7 +8,7 @@ Section SupportedFunctions.
     f_supp: nameset; (* Function support *)
     f_proper: Proper ((≡@{X}) ⟹ (≡@{Y})) f_car;
     f_supp_spec: ∀ (a b: name), a ∉ f_supp → b ∉ f_supp →
-        ∀ (x: X), (⟨a,b⟩ ∙ (f_car (⟨a,b⟩ ∙ x))) ≡@{Y} f_car x 
+        ∀ (x: X), (⟨a,b⟩ • (f_car (⟨a,b⟩ • x))) ≡@{Y} f_car x
   }.
 End SupportedFunctions.
 
@@ -29,11 +29,11 @@ Section FunSuppProperties.
     #[global] Instance fun_supp_equiv_equivalence: Equivalence fun_supp_equiv.
     Proof. split; repeat intro; [reflexivity | symmetry | etransitivity]; eauto. Qed.
 
-    #[global] Instance: Proper (fun_supp_equiv ⟹ (≡@{X}) ⟹ (≡@{Y})) (f_car X Y).
-    Proof. intros ? ? HH1 ? ? HH2; rewrite HH2; apply HH1. Qed.
+    #[global] Instance fun_supp_proper: Proper (fun_supp_equiv ⟹ (≡@{X}) ⟹ (≡@{Y})) (f_car X Y).
+    Proof. intros ? ? HH1 ? ? HH2; rewrite HH2; apply HH1. Qed. 
 
-    #[global,refine] Instance fun_supp_act: PermAction (X →ₛ Y) :=
-      λ p (f: X →ₛ Y), (λₛ (x: X), p ∙ f(-p ∙ x)).
+    #[refine] Instance fun_supp_act: PermAction (X →ₛ Y) :=
+      λ (p: perm) (f: X →ₛ Y), (λₛ (x: X), p • f((-p) • x)).
     Proof. 
       all:try (assumption || typeclasses eauto).
       - exact ((f_supp f) ∪ (perm_dom p)).
@@ -44,7 +44,7 @@ Section FunSuppProperties.
         set_solver.
     Defined.
 
-    #[global] Instance fun_supp_perm: Perm (X →ₛ Y).
+    #[global] Instance fun_supp_perm: PermT (X →ₛ Y).
     Proof.
       split.
       - apply fun_supp_equiv_equivalence.
@@ -68,12 +68,13 @@ End FunSuppProperties.
 
 From Nominal Require Import Fresh.
 
-Lemma fresh_fun_supp `{Nominal X, Nominal Y} (f: X →ₛ Y): 
+Lemma fresh_fun_supp `{Nominal X, Nominal Y} (f: X →ₛ Y):
   ∀ (a: name) (x: X), a # f → a # x → a # f x.
 Proof.
   intros; apply some_any_iff in H3,H4;
-  destruct (exist_fresh (support f ∪ support x ∪ support (f x))) as [b]; destruct_notin_union;
+  destruct (exist_fresh (support f ∪ support x ∪ support (f x))) as [b];
+    apply not_elem_of_union in H5 as [[? ?]%not_elem_of_union ?].
   exists b; split; auto;
   unfold freshP_a, action, fun_supp_act, equiv, fun_supp_equiv in H3; simpl in *;
-  specialize (H3 b H5 x); specialize (H4 b H7); rewrite <-perm_inv, H4 in H3; assumption.
+  specialize (H3 b H5 x); specialize (H4 b H6); rewrite <-perm_inv, H4 in H3; assumption.
 Qed.

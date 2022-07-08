@@ -1,18 +1,55 @@
 (* Name forms a nominal set *)
-From Nominal Require Import Atom Nominal.
+From Nominal Require Import Name Nominal Fresh.
 
-#[export] Instance name_action: PermAction name := swap_perm.
+#[export] Instance name_action: PermAction name := perm_swap.
 #[export] Instance name_equiv: Equiv name := eq.
 #[export] Instance name_support: Support name := (singleton (A := name) (B := nameset)).
 
-#[export] Instance name_perm: Perm name.
+#[export] Instance name_perm: PermT name.
 Proof. 
-    split; unfold "≡", name_equiv,action,name_action in *; repeat intro.
+    split; unfold equiv,name_equiv,action,name_action in *; repeat intro.
     - typeclasses eauto.
     - subst; rewrite H; auto.
     - auto.
-    - symmetry; apply swap_perm_app.
-Defined.
+    - symmetry; apply perm_swap_app.
+Qed.
 
 #[export] Instance name_nominal: Nominal name.
-Proof. split; intros; [apply name_perm | apply swap_neither1; apply (not_elem_of_singleton (C := nameset))]; auto. Qed.
+Proof. 
+    split; intros; 
+        [apply name_perm | 
+         apply swap_neither1; apply (not_elem_of_singleton (C := nameset))]; 
+    auto.
+Qed.
+
+(* Freshness properties for name *)
+Lemma name_fresh_neq1 (a b: name): a # b → a ≠ b.
+Proof. 
+    intros [c [? cF]]; destruct (decide (a = c)); subst.
+    - apply (not_elem_of_singleton (C := nameset)); auto.
+    - apply swap_neither2 in cF as [[] | []]; subst; auto.
+Qed.  
+
+Lemma name_fresh_neq2 (a b: name): a ≠ b → a # b.
+Proof. 
+    intros; constructor 1 with a; split;
+        [unfold support; apply not_elem_of_singleton | apply swap_neither1]; auto. 
+Qed.
+
+Lemma name_neq_fresh_iff (a b: name): a # b ↔ a ≠ b.
+Proof. split; [apply name_fresh_neq1 | apply name_fresh_neq2]. Qed.
+
+Lemma name_fresh_action p (a b: name): b # a → b ∉ perm_dom p → b # (p • a).
+Proof.
+    intros HH ?; destruct (exist_fresh (support a ∪ support b ∪ perm_dom p ∪ support (p • a))) as [w ?];
+    exists w; split; [set_solver |]; 
+    rewrite gact_compat, <-perm_notin_dom_comm, <-gact_compat; [| set_solver | set_solver].
+    apply some_any_iff in HH; cut (w ∉ support a); [intros HHH | set_solver]; 
+    specialize (HH w HHH); rewrite HH; reflexivity.
+Qed.
+
+Lemma name_fresh_false (a: name): a # a → False.
+Proof.
+    intros [? [H1 H2]]; unfold support, name_support in *; apply not_elem_of_singleton_1 in H1.
+    rewrite perm_swap_left in H2; congruence.
+Qed.

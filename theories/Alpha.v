@@ -1,5 +1,5 @@
-Require Import Coq.Classes.RelationClasses.
-From Nominal Require Export Nominal Fresh Instances.Name.
+(* Require Import Coq.Classes.RelationClasses. *)
+From Nominal Require Export Nominal Fresh Instances.Name Instances.Prod.
 
 (* Record NameAbstraction `{Nominal X} (a1x1 a2x2: name * X) := mkNameAbstraction {
     new: name;
@@ -8,99 +8,107 @@ From Nominal Require Export Nominal Fresh Instances.Name.
     new_fixpoint: ⟨new, fst a1x1⟩ ∙ (snd a1x1) ≡@{X} ⟨new, fst a2x2⟩ ∙ (snd a2x2) 
 }. *)
 
+(* Two (equivalent, see below) flavors of alpha relation. 
+   The notation "... | 0" means alpha_equiv_e has priority in the proof search *)
 #[export] Instance alpha_equiv_e `{Nominal X}: Equiv (name * X) | 0 := 
-    λ '(a1,x1) '(a2,x2), ∃ (b: name), b #(a1, a2, x1, x2) ∧ ⟨b,a1⟩ ∙ x1 ≡@{X} ⟨b,a2⟩ ∙ x2.
+    λ '(a,x) '(b,y), ∃ (c: name), c #[a, b, x, y] ∧ ⟨c,a⟩ • x ≡@{X} ⟨c,b⟩ • y.
 
 #[export] Instance alpha_equiv_a `{Nominal X}: Equiv (name * X) | 1 := 
-    λ '(a1,x1) '(a2,x2), ∀ (b: name), b #(a1, a2, x1, x2) → ⟨b,a1⟩ ∙ x1 ≡@{X} ⟨b,a2⟩ ∙ x2.
-    
+    λ '(a,x) '(b,y), ∀ (c: name), c #[a, b, x, y] → ⟨c,a⟩ • x ≡@{X} ⟨c,b⟩ • y.
+
 Infix "≈α" := (alpha_equiv_e) (at level 70, no associativity).
-Notation "(≈α)" := (alpha_equiv_e) (only parsing).
 Infix "≈αₐ" := (alpha_equiv_a) (at level 70, no associativity).
+Notation "(≈α)" := (alpha_equiv_e) (only parsing).
 Notation "(≈αₐ)" := (alpha_equiv_a) (only parsing).
 
-Section AlphaEquivalence.
-    Context `{Nominal X}.
-
-    Lemma alpha_equiv_some_any `{Nominal X} a1 a2 x1 x2 :
-        (a1, x1) ≈α (a2, x2) ↔ (a1, x1) ≈αₐ (a2, x2).
-    Proof.
-        split; intros Hα; unfold alpha_equiv_e, alpha_equiv_a in *.
-        - intros; simpl in *; destruct Hα as [y [? Hα]]; destruct_and!;
-            rewrite (perm_expand _ y a1), (perm_expand _ y a2), <-!gact_compat, 
-                (fresh_fixpoint _ _ x1), (fresh_fixpoint _ _ x2), Hα;
-                    try (apply not_eq_sym, name_neq_fresh_iff); auto.
-        - new b fresh a1 a2 x1 x2; exists b; split; [ | apply Hα]; intuition.
-    Qed.
-
-    #[global] Instance alpha_equivalence_e: Equivalence alpha_equiv_e.
-    Proof.
-        split.
-        - intros [a x]; destruct (exist_fresh (support a ∪ support x)) as [y []%not_elem_of_union];
-            exists y; split_and!; simpl; try (apply support_fresh); auto.
-        - intros [? ?] [? ?] [z ?]; exists z; intuition. 
-        - intros [a x] [b y] [c z] ? ?; simpl in *;
-            new f fresh a x b y c z; apply alpha_equiv_some_any in H1,H2; exists f; split; simpl;
-                [| rewrite (H1 f), (H2 f)]; intuition. 
-    Qed.
-
-    #[global] Instance alpha_equivalence_a: Equivalence alpha_equiv_a.
-    Proof.
-        split.
-        - intros [] ? ?; simpl; reflexivity.
-        - intros [] [] HH b ?; specialize (HH b); intuition.
-        - intros [] [q p] [] H1 H2; apply alpha_equiv_some_any in H1,H2; apply alpha_equiv_some_any.
-            (* for some reason Coq cant find an instance for Transitive alpha_equiv_e, even though its
-               define just above. *)
-            pose proof (@Equivalence_Transitive _ _ alpha_equivalence_e).
-            transitivity (q, p); auto.
-    Qed.
-End AlphaEquivalence.
-
-Lemma alpha_inv `{Nominal X} a a' x x': (a,x) ≈α (a',x') ↔ (a = a' ∧ x ≡ x') ∨ (a # (a',x') ∧ x ≡ ⟨a,a'⟩ ∙ x').
+(* Alpha relation analogue to freshness some/any *)
+Lemma alpha_some_any `{Nominal X} (a b: name) (x y: X): (a, x) ≈α (b, y) ↔ (a, x) ≈αₐ (b, y).
 Proof.
-    destruct (decide (a = a')); subst; split.
-    - intros HH; left; split; [reflexivity |]; destruct HH as [w ?]; eapply perm_inj; intuition; eauto.
-    - intros [[? HH] | [? HH]]; [| rewrite (perm_action_equal) in HH];
-        apply alpha_equiv_some_any; intros ? ?; rewrite HH; reflexivity.
-    - intros [b []]; right; assert (Hfp: a # (a', x')). {
-        apply fresh_pair_iff; split; [assumption |].
-        cut (⟨b,a'⟩ ∙ ⟨b,a'⟩ ∙ x' ≡ x'); [intros HH1 | apply perm_action_duplicate].
-        cut (⟨b,a'⟩ ∙ ⟨b,a⟩ ∙ b = a); [intros HH2 | rewrite swap_perm_left, swap_perm_neither; auto; apply not_eq_sym, name_neq_fresh_iff; intuition].
-        rewrite <-HH1,<-H2; rewrite <-HH2 at 1; do 2 apply fresh_equivariant; intuition.
-        }
-        split; [assumption |].
-        apply fresh_pair_iff in Hfp as []; rewrite (perm_expand _ b _), <-!gact_compat, (fresh_fixpoint a b x'), <-H2, perm_swap, perm_action_duplicate; auto;
-        try (apply not_eq_sym, name_neq_fresh_iff); intuition.
-    - intros [[] | [HH HHH]]; try congruence; apply fresh_pair_iff in HH as [].
-      new w fresh a a' x x'; exists w; split; [intuition |]; 
-      rewrite HHH, (perm_expand w a a'), <-!gact_compat, (fresh_fixpoint w a x'); auto;
-      apply not_eq_sym, name_neq_fresh_iff; assumption.
+    split; intros Ha; unfold alpha_equiv_e, alpha_equiv_a in *.
+    - intros; simpl in *; destruct Ha as [w [? Ha]]; destruct_and!;
+        rewrite (perm_expand _ w a), (perm_expand _ w b), <-!gact_compat, 
+            (fresh_fixpoint _ _ x), (fresh_fixpoint _ _ y), Ha;
+        try (apply not_eq_sym, name_neq_fresh_iff); auto.
+    - new c fresh a b x y; exists c; split; [| apply Ha]; fresh_tac; intuition.
 Qed.
 
-Lemma alpha_inv_name_equiv_iff `{Nominal X} a (x y: X): (a, x) ≈α (a, y) ↔ x ≡ y.
+(* Alpha relation is an equivalence. *)
+#[export] Instance alpha_equivalence_e: Equivalence alpha_equiv_e.
+Proof.
+    split.
+    - intros [a x]; destruct (exist_fresh (support a ∪ support x)) as [y []%not_elem_of_union];
+        exists y; split_and!; simpl; try (apply support_fresh); auto.
+    - intros [? ?] [? ?] [z ?]; exists z; intuition. 
+    - intros [a x] [b y] [c z] A A'; simpl in *;
+        new f fresh a x b y c z; apply alpha_some_any in A,A'; exists f; split; simpl;
+            [| rewrite (A f), (A' f)]; intuition. 
+Qed.
+
+#[export] Instance alpha_equivalence_a: Equivalence alpha_equiv_a.
+Proof.
+    split.
+    - intros [] ? ?; simpl; reflexivity.
+    - intros [] [] HH b ?; specialize (HH b); intuition.
+    - intros [] [q p] [] H1 H2; apply alpha_some_any in H1,H2; apply alpha_some_any.
+        (* for some reason Coq cant find an instance for Transitive alpha_equiv_e, even though its
+           define just above. *)
+        pose proof (@Equivalence_Transitive _ _ alpha_equivalence_e).
+        transitivity (q, p); auto.
+Qed.
+
+Lemma alpha_rename `{Nominal X} (a b: name) (x: X): b#x → (a,x) ≈α (b, ⟨a,b⟩ • x).
+Proof.
+    intros; destruct (decide (a = b)); subst.
+    - apply alpha_some_any; repeat intro; simpl in *; rewrite perm_action_equal; reflexivity.
+    - new c fresh a b x (⟨a,b⟩ • x); exists c; simpl; split; [intuition |]; 
+        rewrite (perm_expand _ b _), <-2!gact_compat, (fresh_fixpoint c b x), (swap_perm b a); auto.
+        apply not_eq_sym,name_neq_fresh_iff; auto.
+Qed.
+
+(* Alpha relation properties *)
+Lemma alpha_inv1 `{Nominal X} (a b: name) (x y: X): 
+    (a,x) ≈α (b,y) → ((a = b ∧ x ≡ y) ∨ (a #(b,y) ∧ x ≡ ⟨a,b⟩ • y)).
+Proof.
+    destruct (decide (a = b)); subst; intros [w [wFr wFx]].
+    - left; split; [reflexivity |]; eapply perm_inj; intuition; eassumption.
+    - right; cut (a # b ∧ a # y); [intros [] |].
+        + split; [apply fresh_prod_iff; intuition |].
+            rewrite (perm_expand _ w _), <-!gact_compat, (fresh_fixpoint a w y), <-wFx, swap_perm; intuition; subst.
+            * symmetry; apply perm_action_duplicate.
+            * eapply name_fresh_false; eauto. 
+        + split; [apply name_neq_fresh_iff; assumption |].
+          cut (⟨w,b⟩ • ⟨w,b⟩ • y ≡ y); [intros HH1 | apply perm_action_duplicate].
+          cut (⟨w,b⟩ • ⟨w,a⟩ • w = a); [intros HH2 | rewrite perm_swap_left, perm_swap_neither; auto; apply not_eq_sym, name_neq_fresh_iff; intuition].
+          rewrite <-HH1,<-wFx; rewrite <-HH2 at 1; do 2 apply fresh_equivariant; intuition.
+Qed.
+
+Lemma alpha_inv2 `{Nominal X} (a b: name) (x y: X): 
+    ((a = b ∧ x ≡ y) ∨ (a # (b,y) ∧ x ≡ ⟨a,b⟩ • y)) → (a,x) ≈α (b,y).
+Proof.
+    intros [[? HH] | [HH1%fresh_prod_iff HH2]]; new w fresh a b x y; subst; exists w.
+    - split; [intuition |]; rewrite HH; reflexivity.
+    - split; [intuition |]; rewrite HH2, (perm_expand w a b), <-!gact_compat, (fresh_fixpoint w a y);
+        intuition; subst; eapply name_fresh_false; eauto.
+Qed.
+
+Lemma alpha_inv_iff `{Nominal X} (a b: name) (x y: X): 
+    (a,x) ≈α (b,y) ↔ (a = b ∧ x ≡ y) ∨ (a # (b,y) ∧ x ≡ ⟨a,b⟩ • y).
+Proof. split; [apply alpha_inv1 | apply alpha_inv2]. Qed.
+
+Corollary alpha_inv_name_equiv_iff `{Nominal X} (a: name) (x y: X): 
+    (a, x) ≈α (a, y) ↔ x ≡ y.
 Proof.
     split; intros HH.
-    - apply alpha_inv in HH as [? | [? H1]]; [| rewrite perm_action_equal in H1]; intuition.
-    - apply alpha_inv; left; intuition.
-Qed.  
+    - apply alpha_inv_iff in HH as [? | [? H1]]; [| rewrite perm_action_equal in H1]; intuition.
+    - apply alpha_inv_iff; left; intuition.
+Qed.
 
-(* Section AlphaEquivalenceProperties.
-    Context `{Nominal X} (a1 a2: name) (x1 x2: X).
-
-    Lemma alpha_inv_fresh: (a1, x1) ≈α (a2, x2) → a1 # x1 → a2 # x2 → x1 ≡ x2.
-    Proof.
-        intros A%alpha_equiv_some_any F1 F2; new w fresh a1 a2 x1 x2;
-        cut (w #( a1, a2, x1, x2)); [intros FF | set_solver];
-        specialize (A w FF); simpl in *; rewrite 2!fresh_fixpoint in A; auto.
-    Qed.
-End AlphaEquivalenceProperties. *)
-
-Lemma alpha_rename `{Nominal X} a a' (x: X): a' # x → (a,x) ≈α (a', ⟨a',a⟩ ∙ x).
+Lemma alpha_equivar `{Nominal X} (p: perm) (a b: name) (x y: X): 
+    (a,x) ≈α (b,y) → (p • a, p • x) ≈α (p • b, p • y).
 Proof.
-    intros; destruct (decide (a = a')); subst.
-    - apply alpha_equiv_some_any; repeat intro; simpl in *; rewrite perm_action_equal; reflexivity.
-    - new b fresh a a' x (⟨a',a⟩ ∙ x); exists b; simpl; split; [intuition |]; 
-        rewrite (perm_expand _ a' _), <-2!gact_compat, (fresh_fixpoint b a' x); auto; 
-        apply not_eq_sym,name_neq_fresh_iff; auto.
+    intro HA; apply alpha_inv_iff; apply alpha_inv_iff in HA as [[? Hxy] | [Hby ?]].
+    - left; split; subst; [| rewrite Hxy]; auto.
+    - right; split.
+        + apply fresh_prod_iff in Hby as []; apply fresh_prod_iff; split; apply fresh_equivariant; auto.
+        + rewrite <-perm_swap_distr; apply perm_inj; assumption.
 Qed.

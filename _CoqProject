@@ -6,16 +6,19 @@
 -R theories/ Nominal
 
 theories/Prelude.v
+
 theories/Group.v
-theories/Atom.v
-theories/Perm.v
+theories/Name.v
+theories/Swap.v
+theories/Permutation.v
+theories/PermT.v
 theories/Nominal.v
+theories/Fresh.v
 
 theories/Instances/Name.v
 theories/Instances/Prod.v
 
-theories/Fresh.v
 theories/Alpha.v
+theories/NameAbstraction.v
 
-theories/Instances/NameAbstraction.v
 theories/Instances/SupportedFunctions.v
