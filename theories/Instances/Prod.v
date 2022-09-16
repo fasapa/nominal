@@ -33,8 +33,8 @@ End ProdNominal.
 
 (* Freshness properties for prod *)
 From Nominal Require Import Instances.Name.
-
-Lemma fresh_prod_iff `{Nominal X, Nominal Y} (a: name) (x: X) (y: Y): a # (x, y) ↔ a # x ∧ a # y.
+(* TODO: find better place to put this *)
+Lemma fresh_prod_iff `{Nominal X, Nominal Y} (a: Name) (x: X) (y: Y): a # (x, y) ↔ a # x ∧ a # y.
 Proof.
   split; [intros [w [? Hf]] | intros []].
     - unfold support,prod_support,action,prod_action,equiv,prod_equiv,prod_relation in *; simpl in *.

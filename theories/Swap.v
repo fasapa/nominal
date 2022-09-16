@@ -1,12 +1,14 @@
 From Nominal Require Export Name.
 
-Definition swap '(a,b): name → name :=
+Definition Swap: Type := (Name * Name).
+
+Definition swap '(a,b): Name → Name :=
   λ c, if decide (a = c) then b else if decide (b = c) then a else c.
 
-Notation "⟨ a , b ⟩" := (@cons (name * name) (a,b) nil).
+Notation "⟨ a , b ⟩" := (@cons Swap (a,b) nil).
 
 Section SwapProperties.
-  Context (a b c d: name).
+  Context (a b c d: Name).
 
   Lemma swap_left: swap (a,b) a = b.
   Proof. simpl; repeat case_decide; congruence. Qed.

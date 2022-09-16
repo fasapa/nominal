@@ -1,83 +1,7 @@
 From Nominal Require Export Group Swap Permutation.
-Open Scope nominal_scope.
-
-(** *Permutation as list forms a Group *)
-#[export] Instance perm_neutral: Neutral perm := @nil (name * name).
-#[export] Instance perm_operator: Operator perm := @app (name * name).
-#[export] Instance perm_inverse: Inverse perm := @reverse (name * name).
-#[export] Instance perm_equiv: Equiv perm :=
-  λ p q: perm, ∀ a: name, perm_swap p a = perm_swap q a.
-#[export] Instance perm_equivalence: Equivalence (≡@{perm}).
-Proof. repeat split; repeat intro; [symmetry | etransitivity]; eauto. Qed.
-
-#[export] Instance PermGrp: Group perm.
-Proof with auto.
-  split; unfold op, perm_operator, neutral, perm_neutral, inv, perm_inverse,
-         equiv, perm_equiv in *; repeat intro...
-  - typeclasses eauto.
-  - rewrite 2?perm_swap_app; do 2 match goal with H : context[_ = _] |- _ => rewrite H end...
-  - transitivity (perm_swap (reverse y) (perm_swap x (perm_swap (reverse x) a)));
-    [rewrite H, perm_swap_left_rev | rewrite perm_swap_right_rev]...
-  - rewrite app_assoc...
-  - rewrite app_nil_r...
-  - rewrite perm_swap_app, perm_swap_right_rev...
-  - rewrite perm_swap_app, perm_swap_left_rev...
-Qed.
-
-(* PermGroup Properties *)
-Lemma perm_equiv_neutral a: ⟨a,a⟩ ≡@{perm} ɛ.
-Proof. unfold equiv, perm_equiv, perm_swap; intros; simpl; case_decide; auto. Qed.
-
-Lemma perm_expand (a b c: name):
-  c ≠ a -> c ≠ b -> ⟨a,c⟩ ≡@{perm} ⟨a,b⟩ + ⟨b,c⟩ + ⟨a,b⟩.
-Proof.
-  intros; unfold equiv, perm_equiv, perm_swap; intros; simpl; 
-    repeat case_decide; subst; congruence.
-Qed.
-
-Lemma swap_perm a b: ⟨a,b⟩ ≡@{perm} ⟨b,a⟩.
-Proof. 
-  unfold equiv, perm_equiv, perm_swap; intros; simpl; 
-    repeat case_decide; subst; auto.
-Qed.
-
-Lemma perm_duplicate a b: ⟨a,b⟩ + ⟨a,b⟩ ≡@{perm} ɛ.
-Proof.
-  unfold equiv, perm_equiv, perm_swap; intros; simpl;
-    repeat case_decide; subst; first [congruence | auto].
-Qed.
-
-Lemma perm_inv a b: ⟨a,b⟩ ≡@{perm} -⟨a,b⟩.
-Proof. unfold equiv, perm_equiv, inv, perm_inverse; simpl; intros; repeat (case_decide); auto. Qed.
-
-Lemma perm_comm_distr a b p: ⟨a,b⟩ + p ≡ p + ⟨perm_swap p a, perm_swap p b⟩.
-Proof.
-  unfold equiv, perm_equiv, op, perm_operator; intros x;
-  destruct (decide (a = x)), (decide (b = x)); subst; rewrite 2!perm_swap_app.
-  - rewrite 2!perm_equiv_neutral; auto.
-  - rewrite 2!perm_swap_left; auto.
-  - rewrite 2!perm_swap_right; auto. 
-  - rewrite 2!perm_swap_neither; try apply perm_swap_neq; intuition.
-Qed.
-
-Lemma perm_notin_dom_comm a b p: 
-  a ∉ perm_dom p → b ∉ perm_dom p → ⟨a,b⟩ + p ≡@{perm} p + ⟨a,b⟩.
-Proof.
-  intros; rewrite perm_comm_distr; unfold equiv, perm_equiv; intros x;
-    rewrite 2!(perm_notin_domain_id p); auto.
-Qed.
-
-Lemma perm_dom_inv p a: a ∉ perm_dom p → a ∉ perm_dom (-p).
-Proof. 
-  induction p as [| p p' IHp]; intros H.
-  - simpl in *; auto.
-  - assert (HH: ∀ A (x: A) y, x :: y = [x] ++ y). { intros; simpl; auto. }
-    unfold inv, perm_inverse; rewrite reverse_cons; rewrite HH in H.
-    rewrite perm_dom_concat in *; set_solver.
-Qed.
 
 (* Permutation Type *)
-Class PermAction X := action: perm → X → X.
+Class PermAction X := action: Perm → X → X.
 #[export] Hint Mode PermAction ! : typeclass_instances.
 
 (* CAUSA PROBLEMAS COM REESCRITA ENVOLVENDO action (- p)
@@ -91,10 +15,10 @@ Notation "( x •)" := (λ y, action y x) (only parsing): nominal_scope.
 (* Permutation type is a type with a permutation group (left) action *)
 Class PermT (X : Type) `{Act: PermAction X, Equiv X}: Prop := {
   gact_setoid :> Equivalence(≡@{X});
-  gact_proper :> Proper ((≡@{perm}) ⟹ (≡@{X}) ⟹ (≡@{X})) (•);
+  gact_proper :> Proper ((≡@{Perm}) ==> (≡@{X}) ==> (≡@{X})) (•);
 
   gact_id: ∀ (x: X), ɛ • x ≡@{X} x;
-  gact_compat: ∀ (p q: perm) (x: X), p • (q • x) ≡@{X} (q + p) • x
+  gact_compat: ∀ (p q: Perm) (x: X), p • (q • x) ≡@{X} (q + p) • x
 }.
 
 #[export] Hint Mode PermT ! - - : typeclass_instances.

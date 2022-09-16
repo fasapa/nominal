@@ -6,8 +6,8 @@ From Nominal Require Import Nominal.
   new_fixpoint: ⟨a,new⟩ • x ≡@{X} x
 }. *)
 
-Definition freshP_e `{Nominal X} (a: name) (x: X) := ∃ (b: name), b ∉ (support x) ∧ ⟨a,b⟩ • x ≡@{X} x.
-Definition freshP_a `{Nominal X} (a: name) (x: X) := ∀ (b: name), b ∉ support x → ⟨a,b⟩ • x ≡@{X} x.
+Definition freshP_e `{Nominal X} (a: Name) (x: X) := ∃ (b: Name), b ∉ (support x) ∧ ⟨a,b⟩ • x ≡@{X} x.
+Definition freshP_a `{Nominal X} (a: Name) (x: X) := ∀ (b: Name), b ∉ support x → ⟨a,b⟩ • x ≡@{X} x.
 
 (* Infix "#" := freshT (at level 50). *)
 (* Infix "#ₚₑ" := freshP_e (at level 50). *)
@@ -19,7 +19,7 @@ Notation "a #[ x , y , z ]" := (a # x ∧ a # y ∧ a # z) (at level 50).
 Notation "a #[ x , y , z , w ]" := (a # x ∧ a # y ∧ a # z ∧ a # w) (at level 50).
 Infix "#ₐ" := freshP_a (at level 50).
 
-Lemma support_fresh `{Nominal X} (a : name) (x: X): a ∉ support x → a # x.
+Lemma support_fresh `{Nominal X} (a: Name) (x: X): a ∉ support x → a # x.
 Proof. intros; econstructor; split; [idtac | eapply perm_action_equal]; assumption. Qed.
 
 (* Freshness Tactics *)
@@ -67,7 +67,7 @@ destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 �
 fresh_tac.
 
 (* Freshness properties *)
-Lemma some_any_iff `{Nominal X} (a: name) (x: X): a # x ↔ a #ₐ x.
+Lemma some_any_iff `{Nominal X} (a: Name) (x: X): a # x ↔ a #ₐ x.
 Proof.
   split.
   - intros [b [SB HH]] c SC; destruct (decide (c = a)), (decide (c = b)); subst; auto.
@@ -103,7 +103,7 @@ Proof. intros; apply some_any, support_fresh_e; auto. Qed. *)
 Lemma fresh_support_fresh `{Nominal X} (x: X): fresh (support x) # x.
 Proof. constructor 1 with (fresh (support x)); split; [apply is_fresh | apply perm_action_equal]. Qed.
 
-Lemma fresh_eq `{Nominal X} (a: name) (x x': X): x ≡ x' → a # x → a # x'.
+Lemma fresh_eq `{Nominal X} (a: Name) (x x': X): x ≡ x' → a # x → a # x'.
 Proof. 
     intros E F; destruct (exist_fresh (support x ∪ support x')) as [w ?]; exists w; split;
     [| apply some_any_iff in F; rewrite <-E; apply F]; fresh_tac.
@@ -120,7 +120,7 @@ Proof.
   [| apply some_any_iff in H2; rewrite HeqN, HeqX; apply H2]; fresh_tac.
 Qed.
 
-Lemma fresh_fixpoint `{Nominal X} (a b: name) (x : X): a # x → b # x → ⟨a,b⟩ • x ≡ x.
+Lemma fresh_fixpoint `{Nominal X} (a b: Name) (x : X): a # x → b # x → ⟨a,b⟩ • x ≡ x.
 Proof.
   intros FA FB; destruct (decide (a = b)); subst.
   - apply perm_action_equal.
@@ -137,7 +137,7 @@ Proof.
         Fp, (support_spec x p k), (swap_perm k b), Fk, (support_spec x p k), Fp; auto.
 Qed.
 
-Lemma fresh_equivariant `{Nominal X} (p: perm) (a: name) (x: X): a # x → (perm_swap p a) # (p • x).
+Lemma fresh_equivariant `{Nominal X} (p: Perm) (a: Name) (x: X): a # x → (perm_swap p a) # (p • x).
 Proof.
   intro F; destruct (exist_fresh (perm_dom p ∪ support x ∪ support (p • x))) as [w ?]; exists w;
     split; [set_solver |]; cut (w = perm_swap p w); [intro HH | rewrite perm_notin_domain_id; set_solver]; 
