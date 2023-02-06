@@ -5,9 +5,9 @@ Section SupportedFunctions.
 
   Record FunSupp: Type := mkFunSupp {
     f_car :> X → Y;
-    f_supp: nameset; (* Function support *)
+    f_supp: NameSet; (* Function support *)
     f_proper: Proper ((≡@{X}) ⟹ (≡@{Y})) f_car;
-    f_supp_spec: ∀ (a b: name), a ∉ f_supp → b ∉ f_supp →
+    f_supp_spec: ∀ (a b: Name), a ∉ f_supp → b ∉ f_supp →
         ∀ (x: X), (⟨a,b⟩ • (f_car (⟨a,b⟩ • x))) ≡@{Y} f_car x
   }.
 End SupportedFunctions.
@@ -33,7 +33,7 @@ Section FunSuppProperties.
     Proof. intros ? ? HH1 ? ? HH2; rewrite HH2; apply HH1. Qed. 
 
     #[refine] Instance fun_supp_act: PermAction (X →ₛ Y) :=
-      λ (p: perm) (f: X →ₛ Y), (λₛ (x: X), p • f((-p) • x)).
+      λ (p: Perm) (f: X →ₛ Y), (λₛ (x: X), p • f((-p) • x)).
     Proof. 
       all:try (assumption || typeclasses eauto).
       - exact ((f_supp f) ∪ (perm_dom p)).
@@ -69,7 +69,7 @@ End FunSuppProperties.
 From Nominal Require Import Fresh.
 
 Lemma fresh_fun_supp `{Nominal X, Nominal Y} (f: X →ₛ Y):
-  ∀ (a: name) (x: X), a # f → a # x → a # f x.
+  ∀ (a: Name) (x: X), a # f → a # x → a # f x.
 Proof.
   intros; apply some_any_iff in H3,H4;
   destruct (exist_fresh (support f ∪ support x ∪ support (f x))) as [b];

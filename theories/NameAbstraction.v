@@ -2,7 +2,7 @@ From Coq Require Import Classes.RelationClasses.
 From Nominal Require Import Alpha Instances.Name Instances.Prod.
 
 #[universes(template=no)]
-Record NameAbstraction `{Nominal X} := mkAbstraction { abs :> (name * X) }.
+Record NameAbstraction `{Nominal X} := mkAbstraction { abs :> (Name * X) }.
 Arguments NameAbstraction _ {_ _ _ _}.
 Arguments mkAbstraction {_ _ _ _ _} _.
 Notation " '[𝔸]' X " := (NameAbstraction X) (at level 1, no associativity, format "[𝔸] X").
@@ -25,7 +25,7 @@ Qed.
     λ p a, mkAbstraction (p • (fst a), p • (snd a)). 
 
 (* FIXME: Por aonde? *)
-#[export] Instance perm_support: Support perm := λ p, perm_dom p.
+#[export] Instance perm_support: Support Perm := λ p, perm_dom p.
 
 #[export] Instance name_abstraction_perm `{Nominal X}: PermT [𝔸]X.
 Proof.
@@ -62,7 +62,7 @@ Proof. split.
 Qed.
 
 (* Basic properties *)
-Lemma name_abstraction_rename `{Nominal X} (a b: name) (x: X): 
+Lemma name_abstraction_rename `{Nominal X} (a b: Name) (x: X): 
     b#x → [a]x ≡ [b](⟨a,b⟩ • x).
 Proof. apply alpha_rename. Qed.
 
@@ -88,7 +88,7 @@ Proof.
     - rewrite swap_perm; reflexivity.
 Qed.
 
-Lemma alpha_class_inv1 `{Nominal X} (a a': name) (x: X): a = a' ∨ a' # x → a' # [a]x.
+Lemma alpha_class_inv1 `{Nominal X} (a a': Name) (x: X): a = a' ∨ a' # x → a' # [a]x.
 Proof.
     intros [EqA | F]; [rewrite EqA | destruct (decide (a = a')); subst]; try apply fresh_same_alpha_class.
     destruct (exist_fresh (support a ∪ support a' ∪ support x)) as [w ?]; exists w.
@@ -98,7 +98,7 @@ Proof.
     apply alpha_inv_name_equiv_iff, fresh_fixpoint; [assumption | apply support_fresh]; set_solver.
 Qed.
 
-Lemma alpha_class_inv2 `{Nominal X} (a a': name) (x: X): a' # [a]x → a = a' ∨ a' # x.
+Lemma alpha_class_inv2 `{Nominal X} (a a': Name) (x: X): a' # [a]x → a = a' ∨ a' # x.
 Proof.
     intros F; destruct (decide (a = a')); subst; [intuition |].
     right. (* a ≠ a' *)
@@ -109,5 +109,5 @@ Proof.
     rewrite L in F; apply alpha_inv_name_equiv_iff in F; assumption.
 Qed.
 
-Lemma alpha_class_inv `{Nominal X} (a a': name) (x: X): a = a' ∨ a' # x ↔ a' # [a]x.
+Lemma alpha_class_inv `{Nominal X} (a a': Name) (x: X): a = a' ∨ a' # x ↔ a' # [a]x.
 Proof. split; [apply alpha_class_inv1 | apply alpha_class_inv2]. Qed.

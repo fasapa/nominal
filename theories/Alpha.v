@@ -10,11 +10,11 @@ From Nominal Require Export Nominal Fresh Instances.Name Instances.Prod.
 
 (* Two (equivalent, see below) flavors of alpha relation. 
    The notation "... | 0" means alpha_equiv_e has priority in the proof search *)
-#[export] Instance alpha_equiv_e `{Nominal X}: Equiv (name * X) | 0 := 
-    λ '(a,x) '(b,y), ∃ (c: name), c #[a, b, x, y] ∧ ⟨c,a⟩ • x ≡@{X} ⟨c,b⟩ • y.
+#[export] Instance alpha_equiv_e `{Nominal X}: Equiv (Name * X) | 0 := 
+    λ '(a,x) '(b,y), ∃ (c: Name), c #[a, b, x, y] ∧ ⟨c,a⟩ • x ≡@{X} ⟨c,b⟩ • y.
 
-#[export] Instance alpha_equiv_a `{Nominal X}: Equiv (name * X) | 1 := 
-    λ '(a,x) '(b,y), ∀ (c: name), c #[a, b, x, y] → ⟨c,a⟩ • x ≡@{X} ⟨c,b⟩ • y.
+#[export] Instance alpha_equiv_a `{Nominal X}: Equiv (Name * X) | 1 := 
+    λ '(a,x) '(b,y), ∀ (c: Name), c #[a, b, x, y] → ⟨c,a⟩ • x ≡@{X} ⟨c,b⟩ • y.
 
 Infix "≈α" := (alpha_equiv_e) (at level 70, no associativity).
 Infix "≈αₐ" := (alpha_equiv_a) (at level 70, no associativity).
@@ -22,7 +22,7 @@ Notation "(≈α)" := (alpha_equiv_e) (only parsing).
 Notation "(≈αₐ)" := (alpha_equiv_a) (only parsing).
 
 (* Alpha relation analogue to freshness some/any *)
-Lemma alpha_some_any `{Nominal X} (a b: name) (x y: X): (a, x) ≈α (b, y) ↔ (a, x) ≈αₐ (b, y).
+Lemma alpha_some_any `{Nominal X} (a b: Name) (x y: X): (a, x) ≈α (b, y) ↔ (a, x) ≈αₐ (b, y).
 Proof.
     split; intros Ha; unfold alpha_equiv_e, alpha_equiv_a in *.
     - intros; simpl in *; destruct Ha as [w [? Ha]]; destruct_and!;
@@ -56,7 +56,7 @@ Proof.
         transitivity (q, p); auto.
 Qed.
 
-Lemma alpha_rename `{Nominal X} (a b: name) (x: X): b#x → (a,x) ≈α (b, ⟨a,b⟩ • x).
+Lemma alpha_rename `{Nominal X} (a b: Name) (x: X): b#x → (a,x) ≈α (b, ⟨a,b⟩ • x).
 Proof.
     intros; destruct (decide (a = b)); subst.
     - apply alpha_some_any; repeat intro; simpl in *; rewrite perm_action_equal; reflexivity.
@@ -66,7 +66,7 @@ Proof.
 Qed.
 
 (* Alpha relation properties *)
-Lemma alpha_inv1 `{Nominal X} (a b: name) (x y: X): 
+Lemma alpha_inv1 `{Nominal X} (a b: Name) (x y: X): 
     (a,x) ≈α (b,y) → ((a = b ∧ x ≡ y) ∨ (a #(b,y) ∧ x ≡ ⟨a,b⟩ • y)).
 Proof.
     destruct (decide (a = b)); subst; intros [w [wFr wFx]].
@@ -82,7 +82,7 @@ Proof.
           rewrite <-HH1,<-wFx; rewrite <-HH2 at 1; do 2 apply fresh_equivariant; intuition.
 Qed.
 
-Lemma alpha_inv2 `{Nominal X} (a b: name) (x y: X): 
+Lemma alpha_inv2 `{Nominal X} (a b: Name) (x y: X): 
     ((a = b ∧ x ≡ y) ∨ (a # (b,y) ∧ x ≡ ⟨a,b⟩ • y)) → (a,x) ≈α (b,y).
 Proof.
     intros [[? HH] | [HH1%fresh_prod_iff HH2]]; new w fresh a b x y; subst; exists w.
@@ -91,11 +91,11 @@ Proof.
         intuition; subst; eapply name_fresh_false; eauto.
 Qed.
 
-Lemma alpha_inv_iff `{Nominal X} (a b: name) (x y: X): 
+Lemma alpha_inv_iff `{Nominal X} (a b: Name) (x y: X): 
     (a,x) ≈α (b,y) ↔ (a = b ∧ x ≡ y) ∨ (a # (b,y) ∧ x ≡ ⟨a,b⟩ • y).
 Proof. split; [apply alpha_inv1 | apply alpha_inv2]. Qed.
 
-Corollary alpha_inv_name_equiv_iff `{Nominal X} (a: name) (x y: X): 
+Corollary alpha_inv_name_equiv_iff `{Nominal X} (a: Name) (x y: X): 
     (a, x) ≈α (a, y) ↔ x ≡ y.
 Proof.
     split; intros HH.
@@ -103,7 +103,7 @@ Proof.
     - apply alpha_inv_iff; left; intuition.
 Qed.
 
-Lemma alpha_equivar `{Nominal X} (p: perm) (a b: name) (x y: X): 
+Lemma alpha_equivar `{Nominal X} (p: Perm) (a b: Name) (x y: X): 
     (a,x) ≈α (b,y) → (p • a, p • x) ≈α (p • b, p • y).
 Proof.
     intro HA; apply alpha_inv_iff; apply alpha_inv_iff in HA as [[? Hxy] | [Hby ?]].
