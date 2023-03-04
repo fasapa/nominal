@@ -257,7 +257,7 @@ Proof.
   rewrite perm_left_inv; reflexivity.
 Qed.
 
-Definition perm_rect_iterator_supported `{Nominal X} (A : NameSet)
+Definition perm_rect_iterator_supported `{Nominal X}
   (fvar : Name →ₛ X)
   (fapp : (X * X) →ₛ X)
   (flam : (Name * X) →ₛ X) : Term → (Perm →ₛ X).
@@ -267,33 +267,29 @@ Proof.
       match t with
       | Var a => 
         λₛ⟦ support fvar ∪ support a ⟧ p, fvar (p • a)
-      | App t1 t2 => 
-        λₛ⟦ support fapp ∪ support (F t1) ∪ support (F t2) ⟧ p, fapp ((F t1) p, (F t2) p)
-      | Lam (a, t) => 
-        λₛ⟦ support flam ∪ support (F t) ∪ support a ⟧ p, flam (a, (F t p))
+      | App m n => 
+        λₛ⟦ support fapp ∪ support (F m) ∪ support (F n) ⟧ p, fapp ((F m) p, (F n) p)
+      | Lam am => let (a, m) := am in 
+        λₛ⟦ support flam ∪ support (F m) ∪ support a ⟧ p, flam (a, (F m p))
       end
   ).
   - repeat intro; rewrite H1; reflexivity.
-  - intros w z Hw Hz p. unfold action at 3. unfold perm_action.
-    rewrite <-2!gact_compat, <-perm_inv, (fresh_fixpoint _ _ a).
-      + rewrite perm_inv at 2; rewrite <-fsupp_action, fresh_fixpoint.
-        * reflexivity.
-        * admit.
-        * admit.       
-      + apply support_fresh; unfold support, name_support. admit.
-      + apply support_fresh; unfold support, name_support. admit.
+  - intros w z []%not_elem_of_union []%not_elem_of_union p; 
+    unfold action at 3; unfold perm_action.
+    rewrite <-2!gact_compat, <-perm_inv, (fresh_fixpoint _ _ a);
+      try (apply support_fresh; assumption).
+      rewrite perm_inv at 2; rewrite <-fsupp_action, fresh_fixpoint;
+        try (apply support_fresh; assumption); reflexivity.
   - repeat intro; rewrite H1; reflexivity.
-  - intros w z Hw Hz p.
-    rewrite <-(fresh_fixpoint w z (F t1)) at 1; try (apply support_fresh; admit).
-    rewrite <-(fresh_fixpoint w z (F t2)) at 1; try (apply support_fresh; admit).
+  - intros w z [[]%not_elem_of_union ?]%not_elem_of_union [[]%not_elem_of_union ?]%not_elem_of_union p.
+    rewrite <-(fresh_fixpoint w z (F m)) at 1; try (apply support_fresh; assumption).
+    rewrite <-(fresh_fixpoint w z (F n)) at 1; try (apply support_fresh; assumption).
     rewrite <-2!fun_1, <-prod_act; rewrite perm_inv at 2; rewrite <-fsupp_action.
-    rewrite fresh_fixpoint; try (apply support_fresh; admit); reflexivity.
+    rewrite fresh_fixpoint; try (apply support_fresh; assumption); reflexivity.
   - repeat intro; rewrite H1; reflexivity.
-  - clear p t0; intros w z Hw Hz p.
-    rewrite <-(fresh_fixpoint w z (F t)) at 1; try (apply support_fresh; admit).
-    rewrite <-(fresh_fixpoint w z a) at 1; try (apply support_fresh; admit).
+  - intros w z [[]%not_elem_of_union ?]%not_elem_of_union [[]%not_elem_of_union ?]%not_elem_of_union p.
+    rewrite <-(fresh_fixpoint w z (F m)) at 1; try (apply support_fresh; assumption).
+    rewrite <-(fresh_fixpoint w z a) at 1; try (apply support_fresh; assumption).
     rewrite <-fun_1, <-prod_act; rewrite perm_inv at 2; rewrite <-fsupp_action.
-    rewrite fresh_fixpoint; try (apply support_fresh; admit); reflexivity.
-Admitted.
-
-Check perm_rect_iterator_supported.
+    rewrite fresh_fixpoint; try (apply support_fresh; assumption); reflexivity.
+Defined.
