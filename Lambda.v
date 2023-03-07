@@ -164,12 +164,6 @@ Admitted.
 From Nominal Require Import Instances.SupportedFunctions
   Instances.Name Instances.Prod Instances.Perm.
 
-Definition FCB `{Nominal X, Nominal Y} (f: X →ₛ Y): Prop :=
-  ∃ (a: Name), a ∉ (support f) ∧ (∀ x: X, a # (f x)).
- 
-Theorem freshness `{Nominal X} (h: Name →ₛ X): 
-  ∃ (a: Name), a #[h, (h a)]. Admitted.
-
 (* Definition perm_rect_1_general := fun (P : Term → Type)
   (fvar : ∀ a : Name, P (Var a))
   (fapp : ∀ m: Term, P m → ∀ n: Term, P n → P (App m n))
@@ -249,6 +243,23 @@ Proof.
   specialize (H3 p (f x) y). apply H3.
 Qed. *)
 
+Definition FCB `{Nominal X, Nominal Y} (f: X →ₛ Y) :=
+  { a | a ∉ (support f) ∧ (∀ x: X, a # (f x)) }.
+ 
+Theorem fresh_1 `{Nominal X} (f: Name →ₛ X): 
+  (∃ (a: Name), a ∉ support f ∧ a ∉ support (f a)) → 
+  ∀ c d, c ∉ support f ∧ d ∉ support f → f c ≡ f d.
+Proof. Admitted.
+
+Theorem fresh_2 `{Nominal X} (f: Name →ₛ X): 
+  (∃ (a: Name), a ∉ support f ∧ a # (f a)) → 
+  ∀ c d, c # f ∧ d # f → f c ≡ f d.
+Proof. Admitted.
+
+Lemma perm_distr w z (p q: Perm): ⟨w,z⟩ • (p + q) ≡ (⟨w,z⟩ • p) + (⟨w,z⟩ • q).
+Proof. unfold action, perm_action; rewrite <-perm_inv, !grp_assoc. Admitted.
+
+Lemma lalal (a b: Name) (p : Perm): ⟨ a, b ⟩ + p ≡ p + ⟨p • a, p • b⟩. Proof. Admitted.
 
 Lemma fun_1 `{Nominal X, Nominal Y} (p : Perm) (f: X →ₛ Y) (x : X):
   p • (f x) ≡ (p • f)(p • x).
@@ -257,10 +268,23 @@ Proof.
   rewrite perm_left_inv; reflexivity.
 Qed.
 
+Lemma support_equivar `{Nominal X} a b (x: X): 
+  a ∉ support x → (⟨a,b⟩•a) ∉ support (⟨a,b⟩•x).
+Proof. Admitted.
+
+Lemma name_action_left (a b: Name) : ⟨ a, b ⟩ • a ≡ b.
+Proof. Admitted.
+
+Lemma support_equiv `{Nominal X} a b (x y: X) :
+  a ≡ b → x ≡ y → a ∉ support x → b ∉ support y.
+Proof. Admitted.
+
 Definition perm_rect_iterator_supported `{Nominal X}
-  (fvar : Name →ₛ X)
+  (A: NameSet)
+  (fvar : Name →ₛ X) (* support fvar ⊂ A *)
   (fapp : (X * X) →ₛ X)
-  (flam : (Name * X) →ₛ X) : Term → (Perm →ₛ X).
+  (flam : (Name * X) →ₛ X) 
+  {lamFCB : FCB flam} : Term → (Perm →ₛ X).
 Proof.
   refine(
     fix F (t: Term) :=
@@ -270,7 +294,9 @@ Proof.
       | App m n => 
         λₛ⟦ support fapp ∪ support (F m) ∪ support (F n) ⟧ p, fapp ((F m) p, (F n) p)
       | Lam am => let (a, m) := am in 
-        λₛ⟦ support flam ∪ support (F m) ∪ support a ⟧ p, flam (a, (F m p))
+        λₛ⟦ support flam ∪ support a ∪ support (F m) ⟧ p,
+          let h: Name →ₛ X := λₛ⟦support flam ∪ support (F m) ∪ support a ∪ support p ∪ A ⟧ a', flam (a', (F m (⟨a,a'⟩ + p))) in
+          h (fresh (support h)) 
       end
   ).
   - repeat intro; rewrite H1; reflexivity.
@@ -286,10 +312,88 @@ Proof.
     rewrite <-(fresh_fixpoint w z (F n)) at 1; try (apply support_fresh; assumption).
     rewrite <-2!fun_1, <-prod_act; rewrite perm_inv at 2; rewrite <-fsupp_action.
     rewrite fresh_fixpoint; try (apply support_fresh; assumption); reflexivity.
-  - repeat intro; rewrite H1; reflexivity.
-  - intros w z [[]%not_elem_of_union ?]%not_elem_of_union [[]%not_elem_of_union ?]%not_elem_of_union p.
-    rewrite <-(fresh_fixpoint w z (F m)) at 1; try (apply support_fresh; assumption).
-    rewrite <-(fresh_fixpoint w z a) at 1; try (apply support_fresh; assumption).
-    rewrite <-fun_1, <-prod_act; rewrite perm_inv at 2; rewrite <-fsupp_action.
-    rewrite fresh_fixpoint; try (apply support_fresh; assumption); reflexivity.
+  -  repeat intro. admit.
+    (* assert (HH: perm_dom x ≡ perm_dom y). { admit. }  *)
+  - intros w z Hw Hz p; cbn zeta.
+    set (g := (λₛ⟦ support flam ∪ support (F m) ∪ support a ∪ support (⟨ w, z ⟩ • p) ∪ A ⟧ a' : Name, flam (a', F m (⟨ a, a' ⟩ + (⟨ w, z ⟩ • p))))).
+    set (h := (λₛ⟦ support flam ∪ support (F m) ∪ support a ∪ support p ∪ A ⟧ a' : Name, flam (a', F m (⟨ a, a' ⟩ + p)))).
+    destruct (exist_fresh (support flam ∪ support (F m) ∪ support a ∪ support w ∪ support z ∪ support (⟨ w, z ⟩ • p) ∪ support p ∪ A)) as [b Hb].
+    assert (HH1: (∃ (b: Name), b ∉ (support flam ∪ support (F m) ∪ support a ∪ support (⟨ w, z ⟩ • p) ∪ A) ∧ b # (g b))). {
+       exists b; split.
+       - set_solver.
+       - subst g; simpl; destruct lamFCB as [c [Hc1 Hc2]].
+         specialize (Hc2 (c, ⟨ c, b ⟩ • (F m (⟨ a, b ⟩ + (⟨ w, z ⟩ • p))))).
+         apply ((fresh_equivariant ⟨c,b⟩ _ _)) in Hc2; rewrite perm_swap_left in Hc2.
+         assert (HH: (⟨ c, b ⟩ • flam (c, ⟨ c, b ⟩ • F m (⟨ a, b ⟩ + (⟨ w, z ⟩ • p)))) ≡ flam (b, F m (⟨ a, b ⟩ + (⟨ w, z ⟩ • p)))).
+         { rewrite fun_1, prod_act, name_action_left, perm_action_duplicate, (fresh_fixpoint _ _ flam).
+            + reflexivity.
+            + apply support_fresh; assumption.
+            + apply support_fresh; set_solver.
+         }
+         rewrite <-HH; apply Hc2.
+    }
+    assert (HH2: (∃ (b: Name), b ∉ (support flam ∪ support (F m) ∪ support a ∪ support p ∪ A) ∧ b # (h b))). { 
+      exists b; split.
+      - set_solver.  
+      - subst h; simpl; destruct lamFCB as [c [Hc1 Hc2]].
+        specialize (Hc2 (c, ⟨ c, b ⟩ • (F m (⟨ a, b ⟩ + p)))).
+        apply ((fresh_equivariant ⟨c,b⟩ _ _)) in Hc2; rewrite perm_swap_left in Hc2.
+        assert (HH: (⟨ c, b ⟩ • flam (c, ⟨ c, b ⟩ • F m (⟨ a, b ⟩ + p))) ≡ flam (b, F m (⟨ a, b ⟩ + p))). {
+          rewrite fun_1, prod_act, name_action_left, perm_action_duplicate, (fresh_fixpoint _ _ flam).
+          + reflexivity.
+          + apply support_fresh; assumption.
+          + apply support_fresh; set_solver.  
+        }
+        rewrite <-HH; apply Hc2.
+    }
+    pose proof fresh_2 as F1; pose proof fresh_2 as F2.
+    specialize (F1 g HH1 (fresh (support g)) b). specialize (F2 h HH2 (fresh (support h)) b).
+    rewrite F1; try (split; admit). rewrite F2; try (split; admit).
+    subst g h; simpl.
+    clear HH1 HH2 F1 F2.
+    assert (HH1: (⟨a,b⟩ + (⟨w, z⟩•p)) ≡ (⟨w, z⟩•⟨a,b⟩) + (⟨w,z⟩•p)). {
+      rewrite <-(fresh_fixpoint w z (⟨ a, b ⟩)) at 1. reflexivity. admit. admit.
+    }
+    rewrite HH1.
+    assert (HH2: (⟨w,z⟩•⟨a,b⟩) + (⟨w,z⟩•p) ≡ ⟨w,z⟩•(⟨a,b⟩ + p)). {
+      unfold action, perm_action; rewrite <-perm_inv, !grp_assoc.
+      assert (HHH2: ⟨ w, z ⟩ + ⟨ a, b ⟩ + ⟨ w, z ⟩ + ⟨ w, z ⟩ + p + ⟨ w, z ⟩ ≡ ⟨ w, z ⟩ + ⟨ a, b ⟩ + (⟨ w, z ⟩ + ⟨ w, z ⟩) + p + ⟨ w, z ⟩). {
+        rewrite !grp_assoc; reflexivity.
+      }
+      rewrite HHH2, perm_duplicate. admit.
+    }
+    rewrite HH2.
+    rewrite <-(fresh_fixpoint w z (F m)) at 1; try (apply support_fresh; admit).
+    rewrite <-(fresh_fixpoint w z b) at 1; try (apply support_fresh; admit).
+    rewrite <-fun_1, <-prod_act, <-fsupp_action, fresh_fixpoint; try (apply support_fresh; admit).
+    reflexivity.
+    (* rewrite <-(fresh_fixpoint w z (F m)) at 1; try (apply support_fresh; assumption).
+    rewrite <-(fresh_fixpoint w z a') at 1; try (apply support_fresh; admit).
+    rewrite <-gact_compat.
+    rewrite <-prod_act.
+    rewrite <-fun_1, <-prod_act. rewrite perm_inv at 2; rewrite <-fsupp_action.
+    rewrite fresh_fixpoint; try (apply support_fresh; assumption); reflexivity. *)
+Unshelve.
+  (* show that h is supported *)
+  intros w z Hw Hz b.
+  set (T := ⟨ w, z ⟩ • flam (⟨ w, z ⟩ • b, F m (⟨ a, ⟨ w, z ⟩ • b ⟩ + p))).
+  rewrite <-(fresh_fixpoint w z flam); try (apply support_fresh; admit).
+  rewrite fsupp_action, <-perm_inv, prod_act, (fun_1 (⟨w,z⟩) (F m)).
+  rewrite (fresh_fixpoint w z (F m)); try (apply support_fresh; admit).
+  rewrite perm_distr. unfold action at 3; unfold action at 3. unfold perm_action. 
+  assert (HH: - ⟨ w, z ⟩ + (⟨ a, b ⟩ + ⟨ w, z ⟩) + (- ⟨ w, z ⟩ + (p + ⟨ w, z ⟩)) ≡ (⟨ a, ⟨ w, z ⟩ • b ⟩ + p)). {
+    rewrite <-perm_inv, !grp_assoc.
+    assert (HH1: ⟨ w, z ⟩ + ⟨ a, b ⟩ + ⟨ w, z ⟩ + ⟨ w, z ⟩ + p + ⟨ w, z ⟩ ≡ ⟨ w, z ⟩ + ⟨ a, b ⟩ + p + ⟨ w, z ⟩). { admit. }
+    rewrite HH1. pose proof (perm_notin_dom_comm w z p).
+    assert (HH2: ⟨ w, z ⟩ + ⟨ a, b ⟩ + p + ⟨ w, z ⟩ ≡ ⟨ w, z ⟩ + ⟨ a, b ⟩ + ⟨ w, z ⟩ + p). { admit. }
+    rewrite HH2.
+    pose proof (perm_comm_distr a b ⟨ w, z ⟩).
+    assert (HH3: ⟨ a, b ⟩ + ⟨ w, z ⟩ ≡ ⟨ w, z ⟩ + ⟨a, ⟨ w, z ⟩ • b⟩). { admit. }
+    assert (HH4: ⟨ w, z ⟩ + ⟨ a, b ⟩ + ⟨ w, z ⟩ + p ≡ ⟨ w, z ⟩ + ⟨ w, z ⟩ + ⟨ a, ⟨ w, z ⟩ • b ⟩ + p). { admit. }
+    rewrite HH4. admit.
+  }
+  assert (HH1: F m (- ⟨ w, z ⟩ + (⟨ a, b ⟩ + ⟨ w, z ⟩) + (- ⟨ w, z ⟩ + (p + ⟨ w, z ⟩))) ≡ F m (⟨ a, ⟨ w, z ⟩ • b ⟩ + p)). {
+    rewrite HH; reflexivity.
+  }
+  rewrite HH1. subst T. reflexivity.
 Defined.
