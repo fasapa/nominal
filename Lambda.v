@@ -251,11 +251,11 @@ Proof.
       rewrite perm_inv at 2; rewrite <-fsupp_action, fresh_fixpoint;
         try (apply support_fresh; assumption); reflexivity).
   - repeat intro; rewrite H1; reflexivity.
-  - abstract (intros w z [[]%not_elem_of_union ?]%not_elem_of_union [[]%not_elem_of_union ?]%not_elem_of_union p;
-    rewrite <-(fresh_fixpoint w z (F m)) at 1; try (apply support_fresh; assumption);
-    rewrite <-(fresh_fixpoint w z (F n)) at 1; try (apply support_fresh; assumption);
-    rewrite <-2!fun_1, <-prod_act; rewrite perm_inv at 2; rewrite <-fsupp_action;
-    rewrite fresh_fixpoint; try (apply support_fresh; assumption); reflexivity).
+  - intros w z [[]%not_elem_of_union ?]%not_elem_of_union [[]%not_elem_of_union ?]%not_elem_of_union p.
+    rewrite <-(fresh_fixpoint w z (F m)) at 1; try (apply support_fresh; assumption).
+    rewrite <-(fresh_fixpoint w z (F n)) at 1; try (apply support_fresh; assumption).
+    rewrite <-2!fun_1, <-prod_act; rewrite perm_inv at 2; rewrite <-fsupp_action.
+    rewrite fresh_fixpoint; try (apply support_fresh; assumption); reflexivity.
   - intros w z Hw Hz p; cbn zeta.
     set (g := (λₛ⟦ support flam ∪ support (F m) ∪ support a ∪ support (⟨ w, z ⟩ • p) ∪ A ⟧ a' : Name, flam [a'](F m (⟨ a, a' ⟩ + (⟨ w, z ⟩ • p))))).
     set (h := (λₛ⟦ support flam ∪ support (F m) ∪ support a ∪ support p ∪ A ⟧ a' : Name, flam [a'](F m (⟨ a, a' ⟩ + p)))).
@@ -421,6 +421,6 @@ Unshelve.
   + split; apply support_fresh; subst a'; unfold support in *; simpl in *.
   * apply is_fresh.
   * set_solver.  
-Defined.
+Qed.
 
 Print perm_rect_iterator_supported_abstraction.
