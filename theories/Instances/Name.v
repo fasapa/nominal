@@ -39,6 +39,12 @@ Qed.
 Lemma name_neq_fresh_iff (a b: Name): a # b ↔ a ≠ b.
 Proof. split; [apply name_fresh_neq1 | apply name_fresh_neq2]. Qed.
 
+Lemma name_fresh_iff (a b: Name): a # b ↔ b # a.
+Proof. 
+    split; intro H; apply name_neq_fresh_iff in H; apply name_neq_fresh_iff;
+    apply not_eq_sym; assumption.
+Qed.
+
 Lemma name_fresh_action p (a b: Name): b # a → b ∉ perm_dom p → b # (p • a).
 Proof.
     intros HH ?; destruct (exist_fresh (support a ∪ support b ∪ perm_dom p ∪ support (p • a))) as [w ?];

@@ -33,7 +33,7 @@ Proof.
 Qed.
 
 (* Alpha relation is an equivalence. *)
-#[export] Instance alpha_equivalence_e: Equivalence alpha_equiv_e.
+#[export] Instance alpha_equivalence_e `{Nominal X}: Equivalence (@alpha_equiv_e X _ _ _ _).
 Proof.
     split.
     - intros [a x]; destruct (exist_fresh (support a ∪ support x)) as [y []%not_elem_of_union];
@@ -44,7 +44,7 @@ Proof.
             [| rewrite (A f), (A' f)]; intuition. 
 Qed.
 
-#[export] Instance alpha_equivalence_a: Equivalence alpha_equiv_a.
+#[export] Instance alpha_equivalence_a `{Nominal X}: Equivalence (@alpha_equiv_a X _ _ _ _).
 Proof.
     split.
     - intros [] ? ?; simpl; reflexivity.

@@ -88,9 +88,10 @@ Proof.
     - rewrite swap_perm; reflexivity.
 Qed.
 
-Lemma alpha_class_inv1 `{Nominal X} (a a': Name) (x: X): a = a' ∨ a' # x → a' # [a]x.
+Lemma alpha_class_inv1 `{Nominal X} (a a': Name) (x: X): 
+    a = a' ∨ (a ≠ a' ∧ a' # x) → a' # [a]x.
 Proof.
-    intros [EqA | F]; [rewrite EqA | destruct (decide (a = a')); subst]; try apply fresh_same_alpha_class.
+    intros [EqA | [? F]]; [rewrite EqA | destruct (decide (a = a')); subst]; try apply fresh_same_alpha_class.
     destruct (exist_fresh (support a ∪ support a' ∪ support x)) as [w ?]; exists w.
     split; [set_solver |].
     unfold equiv, name_abstraction_equiv; simpl.
@@ -98,10 +99,11 @@ Proof.
     apply alpha_inv_name_equiv_iff, fresh_fixpoint; [assumption | apply support_fresh]; set_solver.
 Qed.
 
-Lemma alpha_class_inv2 `{Nominal X} (a a': Name) (x: X): a' # [a]x → a = a' ∨ a' # x.
+Lemma alpha_class_inv2 `{Nominal X} (a a': Name) (x: X): 
+    a' # [a]x → a = a' ∨ (a ≠ a' ∧ a' # x).
 Proof.
     intros F; destruct (decide (a = a')); subst; [intuition |].
-    right. (* a ≠ a' *)
+    right. (* a ≠ a' *) split; auto.
     destruct (exist_fresh (support a ∪ support a' ∪ support x ∪ support [a]x)) as [w ?]; exists w.
     split; [set_solver |]; apply some_any_iff in F; cut (w ∉ support [a]x); [intros Hw | set_solver].
     specialize (F w Hw); unfold equiv, name_abstraction_equiv in F. 
@@ -109,5 +111,52 @@ Proof.
     rewrite L in F; apply alpha_inv_name_equiv_iff in F; assumption.
 Qed.
 
-Lemma alpha_class_inv `{Nominal X} (a a': Name) (x: X): a = a' ∨ a' # x ↔ a' # [a]x.
+Lemma alpha_class_inv `{Nominal X} (a a': Name) (x: X): 
+    a = a' ∨ (a ≠ a' ∧ a' # x) ↔ a' # [a]x.
 Proof. split; [apply alpha_class_inv1 | apply alpha_class_inv2]. Qed.
+
+#[global] Instance name_abstraction_rw1 `{Nominal X}: 
+    ∀a, Proper (equiv ==> alpha_equiv_e) (pair a).
+Proof. repeat intro; apply alpha_inv_iff; left; tauto. Qed.
+
+#[global] Instance name_abstraction_rw2 `{Nominal X}: 
+    Proper (alpha_equiv_e ==> (@name_abstraction_equiv X _ _ _ _)) mkAbstraction.
+Proof. repeat intro; unfold name_abstraction_equiv; simpl; assumption. Qed.
+
+#[global] Instance name_abstraction_rw3 `{Nominal}: 
+    Proper ((@name_abstraction_equiv X _ _ _ _) ==> (@name_abstraction_equiv X _ _ _ _) ==> flip impl) equiv.
+Proof.
+    repeat intro; unfold name_abstraction_equiv in *; 
+    destruct x as [[a x]]; destruct y as [[a' x']];
+    destruct x0 as [[b z]]; destruct y0 as [[b' z']]; simpl; unfold equiv in *.
+    (* for some reason Coq cant find an instance for Transitive or Symmetric alpha_equiv_e *)
+    pose proof (@Equivalence_Transitive _ _ alpha_equivalence_e) as T.
+    pose proof (@Equivalence_Symmetric _ _ alpha_equivalence_e) as S.
+    apply T with [a']x'; auto; apply T with [b']z'; auto.
+Qed.
+    
+#[global] Instance name_abstraction_rw4 `{Nominal X}: 
+    ∀ a (x : X), ProperProxy ((@name_abstraction_equiv X _ _ _ _)) [a]x.
+Proof. 
+    unfold ProperProxy,name_abstraction_equiv; repeat intro.
+    pose proof (@Equivalence_Reflexive _ _ alpha_equivalence_e) as F.
+    auto.
+Qed.
+
+Lemma name_abstraction_inv `{Nominal} (a a': Name) (x y: X):
+    [a]x ≡ [a']y ↔ (a = a' ∧ x ≡ y) ∨ ((a # [a']y) ∧ x ≡ ⟨a,a'⟩ • y).
+Proof.
+    split; intro HH.
+    - apply alpha_inv_iff in HH as [? | [HHH ?]].
+        + left; assumption.
+        + right; split; try tauto; apply alpha_class_inv; right; apply fresh_prod_iff in HHH as []; split.
+            * apply not_eq_sym, name_neq_fresh_iff; assumption.
+            * assumption. 
+    - destruct HH as [[] | [HH1 HH2]].
+        + subst; rewrite H2; reflexivity.
+        + apply alpha_class_inv in HH1 as []; subst.
+            * apply nabs_inv; rewrite HH2; apply perm_action_equal.
+            * apply alpha_inv_iff; right; split.
+                -- apply fresh_prod_iff; split; [apply name_fresh_iff,name_neq_fresh_iff |]; tauto.
+                -- assumption.
+Qed.
