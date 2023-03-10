@@ -270,7 +270,7 @@ Proof.
   } rewrite HH2; reflexivity.
 Qed.
 
-Definition perm_rect_iterator_supported_abstraction `{Nominal X}
+Definition perm_alfa_rec `{Nominal X}
   (A: NameSet)
   (fvar : Name →ₛ X)
   (fapp : (X * X) →ₛ X)
