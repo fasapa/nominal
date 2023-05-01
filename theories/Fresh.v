@@ -23,6 +23,11 @@ Lemma support_fresh `{Nominal X} (a: Name) (x: X): a ∉ support x → a # x.
 Proof. intros; econstructor; split; [idtac | eapply perm_action_equal]; assumption. Qed.
 
 (* Freshness Tactics *)
+Ltac split_union :=
+  repeat (match goal with
+    | [H : _ ∉ _ ∪ _ |- _] => apply not_elem_of_union in H as []
+    end; auto).
+
 Ltac fresh_tac :=
   repeat (match goal with
     | [H : _ ∉ _ ∪ _ |- _] => apply not_elem_of_union in H as []
@@ -31,40 +36,31 @@ Ltac fresh_tac :=
     end; auto).
 
 Tactic Notation "new" ident(w) "fresh" constr(H1) :=
-destruct (exist_fresh (support H1)) as [w ?]; 
-fresh_tac.
+destruct (exist_fresh (support H1)) as [w ?].
 
 Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) :=
-destruct (exist_fresh (support H1 ∪ support H2)) as [w ?]; 
-fresh_tac.
+destruct (exist_fresh (support H1 ∪ support H2)) as [w ?].
 
 Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) :=
-destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3)) as [w ?]; 
-fresh_tac.
+destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3)) as [w ?].
 
 Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) constr(H4) :=
-destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4)) as [w ?];
-fresh_tac.
+destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4)) as [w ?].
 
 Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) constr(H4) constr(H5) :=
-destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5)) as [w ?];
-fresh_tac.
+destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5)) as [w ?].
 
 Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) constr(H4) constr(H5) constr(H6) :=
-destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5 ∪ support H6)) as [w ?];
-fresh_tac.
+destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5 ∪ support H6)) as [w ?].
 
 Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) constr(H4) constr(H5) constr(H6) constr(H7) constr(H8) :=
-destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5 ∪ support H6 ∪ support H7 ∪ support H8)) as [w ?];
-fresh_tac.
+destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5 ∪ support H6 ∪ support H7 ∪ support H8)) as [w ?].
 
 Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) constr(H4) constr(H5) constr(H6) constr(H7) constr(H8) constr(H9) :=
-destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5 ∪ support H6 ∪ support H7 ∪ support H8 ∪ support H9)) as [w ?];
-fresh_tac.
+destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5 ∪ support H6 ∪ support H7 ∪ support H8 ∪ support H9)) as [w ?].
 
 Tactic Notation "new" ident(w) "fresh" constr(H1) constr(H2) constr(H3) constr(H4) constr(H5) constr(H6) constr(H7) constr(H8) constr(H9) constr(H10) :=
-destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5 ∪ support H6 ∪ support H7 ∪ support H8 ∪ support H9 ∪ support H10)) as [w ?];
-fresh_tac.
+destruct (exist_fresh (support H1 ∪ support H2 ∪ support H3 ∪ support H4 ∪ support H5 ∪ support H6 ∪ support H7 ∪ support H8 ∪ support H9 ∪ support H10)) as [w ?].
 
 (* Freshness properties *)
 Lemma some_any_iff `{Nominal X} (a: Name) (x: X): a # x ↔ a #ₐ x.

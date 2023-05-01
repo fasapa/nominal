@@ -8,6 +8,8 @@ Module Type ATOMIC.
   (* Contable? *)
   Axiom dec : EqDecision t.
   Axiom inf : Infinite t.
+
+  Axiom default: t.
 End ATOMIC.
 
 Module Atom : ATOMIC.
@@ -15,6 +17,8 @@ Module Atom : ATOMIC.
 
   #[export] Instance dec : EqDecision t := Nat.eq_dec.
   #[export] Instance inf : Infinite t := nat_infinite.
+
+  Definition default := 0.
 End Atom.
 #[export] Existing Instances Atom.dec Atom.inf.
 

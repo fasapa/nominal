@@ -1,12 +1,5 @@
-(* Require Import Coq.Classes.RelationClasses. *)
+From Coq Require Import Classes.RelationClasses.
 From Nominal Require Export Nominal Fresh Instances.Name Instances.Prod.
-
-(* Record NameAbstraction `{Nominal X} (a1x1 a2x2: name * X) := mkNameAbstraction {
-    new: name;
-    new_fresh1: new # (snd a1x1);
-    new_fresh2: new # (snd a2x2);
-    new_fixpoint: ⟨new, fst a1x1⟩ ∙ (snd a1x1) ≡@{X} ⟨new, fst a2x2⟩ ∙ (snd a2x2) 
-}. *)
 
 (* Two (equivalent, see below) flavors of alpha relation. 
    The notation "... | 0" means alpha_equiv_e has priority in the proof search *)
@@ -29,7 +22,7 @@ Proof.
         rewrite (perm_expand _ w a), (perm_expand _ w b), <-!gact_compat, 
             (fresh_fixpoint _ _ x), (fresh_fixpoint _ _ y), Ha;
         try (apply not_eq_sym, name_neq_fresh_iff); auto.
-    - new c fresh a b x y; exists c; split; [| apply Ha]; fresh_tac; intuition.
+    - new c fresh a b x y; fresh_tac; exists c; split; [| apply Ha]; fresh_tac; intuition.
 Qed.
 
 (* Alpha relation is an equivalence. *)
@@ -40,7 +33,7 @@ Proof.
         exists y; split_and!; simpl; try (apply support_fresh); auto.
     - intros [? ?] [? ?] [z ?]; exists z; intuition. 
     - intros [a x] [b y] [c z] A A'; simpl in *;
-        new f fresh a x b y c z; apply alpha_some_any in A,A'; exists f; split; simpl;
+        new f fresh a x b y c z; fresh_tac; apply alpha_some_any in A,A'; exists f; split; simpl;
             [| rewrite (A f), (A' f)]; intuition. 
 Qed.
 
@@ -60,7 +53,16 @@ Lemma alpha_rename `{Nominal X} (a b: Name) (x: X): b#x → (a,x) ≈α (b, ⟨a
 Proof.
     intros; destruct (decide (a = b)); subst.
     - apply alpha_some_any; repeat intro; simpl in *; rewrite perm_action_equal; reflexivity.
-    - new c fresh a b x (⟨a,b⟩ • x); exists c; simpl; split; [intuition |]; 
+    - new c fresh a b x (⟨a,b⟩ • x); fresh_tac; exists c; simpl; split; [intuition |]; 
+        rewrite (perm_expand _ b _), <-2!gact_compat, (fresh_fixpoint c b x), (swap_perm b a); auto.
+        apply not_eq_sym,name_neq_fresh_iff; auto.
+Qed.
+
+Lemma alpha_rename_swap `{Nominal X} (a b: Name) (x: X): b#x → (a,x) ≈α (b, ⟨b,a⟩ • x).
+Proof.
+    intros; destruct (decide (a = b)); subst.
+    - apply alpha_some_any; repeat intro; simpl in *; rewrite perm_action_equal; reflexivity.
+    - new c fresh a b x (⟨b,a⟩ • x); fresh_tac; exists c; simpl; split; [intuition |]; 
         rewrite (perm_expand _ b _), <-2!gact_compat, (fresh_fixpoint c b x), (swap_perm b a); auto.
         apply not_eq_sym,name_neq_fresh_iff; auto.
 Qed.
@@ -85,7 +87,7 @@ Qed.
 Lemma alpha_inv2 `{Nominal X} (a b: Name) (x y: X): 
     ((a = b ∧ x ≡ y) ∨ (a # (b,y) ∧ x ≡ ⟨a,b⟩ • y)) → (a,x) ≈α (b,y).
 Proof.
-    intros [[? HH] | [HH1%fresh_prod_iff HH2]]; new w fresh a b x y; subst; exists w.
+    intros [[? HH] | [HH1%fresh_prod_iff HH2]]; new w fresh a b x y; fresh_tac; subst; exists w.
     - split; [intuition |]; rewrite HH; reflexivity.
     - split; [intuition |]; rewrite HH2, (perm_expand w a b), <-!gact_compat, (fresh_fixpoint w a y);
         intuition; subst; eapply name_fresh_false; eauto.
