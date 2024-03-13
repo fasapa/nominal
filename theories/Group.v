@@ -24,9 +24,9 @@ Notation "(-)" := inv (only parsing): nominal_scope.
 Notation "x - y" := (x + (-y))%nom: nominal_scope.
 
 Class Group (A : Type) `{Ntr: Neutral A, Opr: Operator A, Inv: Inverse A, Equiv A}: Prop := {
-  grp_setoid :> Equivalence(≡@{A});
-  grp_op_proper :> Proper ((≡@{A}) ⟹ (≡@{A}) ⟹ (≡@{A})) (+);
-  grp_inv_proper :> Proper ((≡@{A}) ⟹ (≡@{A})) (-);
+  grp_setoid :: Equivalence(≡@{A});
+  grp_op_proper :: Proper ((≡@{A}) ⟹ (≡@{A}) ⟹ (≡@{A})) (+);
+  grp_inv_proper :: Proper ((≡@{A}) ⟹ (≡@{A})) (-);
 
   grp_assoc : ∀ (x y z : A), x + (y + z) ≡@{A} (x + y) + z;
 
@@ -36,7 +36,6 @@ Class Group (A : Type) `{Ntr: Neutral A, Opr: Operator A, Inv: Inverse A, Equiv 
   grp_left_inv : ∀ (x : A), (-x) + x ≡@{A} ɛ@{A};
   grp_right_inv : ∀ (x : A), x - x ≡@{A} ɛ@{A};
 }.
-(* #[global] Hint Mode Group ! - - - -: typeclass_instances. *)
 
 Arguments grp_assoc {_ _ _ _ _ Grp}: rename.
 Arguments grp_left_id {_ _ _ _ _ Grp}: rename.

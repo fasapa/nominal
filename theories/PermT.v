@@ -14,20 +14,14 @@ Notation "( x •)" := (λ y, action y x) (only parsing): nominal_scope.
 
 (* Permutation type is a type with a permutation group (left) action *)
 Class PermT (X : Type) `{Act: PermAction X, Equiv X}: Prop := {
-  gact_setoid :> Equivalence(≡@{X});
-  gact_proper :> Proper ((≡@{Perm}) ==> (≡@{X}) ==> (≡@{X})) (•);
+  gact_setoid :: Equivalence(≡@{X});
+  gact_proper :: Proper ((≡@{Perm}) ==> (≡@{X}) ==> (≡@{X})) (•);
 
   gact_id: ∀ (x: X), ɛ • x ≡@{X} x;
   gact_compat: ∀ (p q: Perm) (x: X), p • (q • x) ≡@{X} (q + p) • x
 }.
 
 #[export] Hint Mode PermT ! - - : typeclass_instances.
-#[export] Existing Instance gact_setoid.
-#[export] Existing Instance gact_proper.
-
-(* Arguments gact_id {_ _ _ _ _ Grp _ _ _ GAct} : rename.
-Arguments gact_compat {_ _ _ _ _ Grp _ _ _ GAct} : rename.
-Arguments gact_proper {_ _ _ _ _ Grp _ _ _ GAct} : rename. *)
 
 Section PermTypeProperties.
   Context `{PermT X}.
