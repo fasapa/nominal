@@ -55,7 +55,7 @@ Proof. induction t; intros.
   - simpl in *; unfold subst_name. admit.
   - admit.
   - admit.
-Admitted.   
+Admitted.
 
 Inductive aeq: Term → Term → Prop :=
 | AeqVar: ∀ a, aeq (Var a) (Var a)
@@ -271,6 +271,9 @@ Proof.
   try congruence.
 Qed.
 
+Lemma action_var a b c: ⟨a,b⟩ • Var c = Var (⟨a,b⟩•c).
+Proof. unfold action; simpl; reflexivity. Qed.
+
 Lemma action_lam a b c t: ⟨a,b⟩ • Lam (c, t) = Lam (⟨a,b⟩•c, ⟨a,b⟩•t).
 Proof. unfold action; simpl; reflexivity. Qed.
 
@@ -451,45 +454,60 @@ Section AlphaStructural.
     - rewrite HH, alpha_rec_perm; reflexivity.
   Qed.
 
-  Lemma support_alpha m: support (perm_alpha_rec m) ⊆ support fvar ∪ support fapp ∪ support flam ∪ atm1 m.
+  Lemma alpha_rec_lam1 a m:
+    let h := fresh (support flam ∪ support a ∪ support m ∪ support (perm_alpha_rec m)) in
+    alpha_rec (Lam (a,m)) ≡ flam [h](alpha_rec (⟨a,h⟩•m)).
   Proof.
-      induction m using term_ind_general; simpl; unfold support at 1.
-      - simpl; simpl. admit.
-      - simpl. admit.
-      - simpl; unfold support; simpl. set_solver.
+    intros; unfold alpha_rec; simpl; unfold support at 1; simpl.
+    set (b := fresh _).
+    assert (HH: h = b). { subst h b; unfold support; simpl; apply fresh_proper; set_solver. } 
+    apply fsupp_equiv, name_abstraction_inv; left; split.
+    - auto. 
+    - rewrite HH, alpha_rec_perm; reflexivity.
   Qed.
 
-Lemma alpha_rec_lam_exists m:
-    ∀ a, a ∉ (support fvar ∪ support fapp ∪ support flam ∪ support m) → 
+  (* Lemma g_var_support a : support (g_var a) ⊆ (support fvar ∪ support fapp ∪ support flam).
+  Proof. unfold support at 1; simpl. *)
+
+  Lemma support_alpha m: 
+    support (perm_alpha_rec m) ⊆ support fvar ∪ support fapp ∪ support flam ∪ atm1 m.
+  Proof. induction m using term_ind_general; unfold support at 1; simpl; set_solver. Qed.
+
+  Lemma alpha_rec_respectfull m n : 
+    aeq m n → alpha_rec m ≡ alpha_rec n.
+  Proof. intros; unfold alpha_rec; apply perm_alpha_rec_respectfull; assumption. Qed.
+
+  (* Lemma alpha_rec_lam_exists m:
+    ∀ a, a ∉ (support fvar ∪ support fapp ∪ support flam ∪ atm1 m) → 
     alpha_rec (Lam [a]m) ≡ flam [a](alpha_rec m).
   Proof.
-    intros; unfold alpha_rec; simpl; unfold support at 1; simpl; set (w := fresh _).
-    apply fsupp_equiv, name_abstraction_inv; right; split.
-    - apply alpha_class_inv; right; split.
-      + apply not_eq_sym; apply name_neq_fresh_iff, support_fresh; subst w.
+  intros; unfold alpha_rec; simpl; unfold support at 1; simpl; set (w := fresh _).
+  apply fsupp_equiv, name_abstraction_inv; right; split.
+  - apply alpha_class_inv; right; split.
+    + apply not_eq_sym; apply name_neq_fresh_iff, support_fresh; subst w.
+      eapply not_elem_of_weaken.
+      * eapply is_fresh.
+      * set_solver.
+    + apply fresh_fun_supp; apply support_fresh; subst w; eapply not_elem_of_weaken;
+      try eapply is_fresh; set_solver.
+  - rewrite alpha_rec_perm, fun_equivar, (fresh_fixpoint w a).
+    + rewrite <-alpha_rec_perm. unfold action, perm_action; rewrite (fresh_fixpoint a w).
+      * apply fsupp_equiv; unfold action, perm_action.
+        rewrite grp_left_id, grp_left_inv; reflexivity.
+      * apply support_fresh. set_solver.
+      * apply support_fresh; subst w.
         eapply not_elem_of_weaken.
-        * eapply is_fresh.
-        * set_solver.
-      + apply fresh_fun_supp; apply support_fresh; subst w; eapply not_elem_of_weaken;
-        try eapply is_fresh; set_solver.
-    - rewrite alpha_rec_perm, fun_equivar, (fresh_fixpoint w a).
-      + rewrite (fresh_fixpoint a w).
-        * apply fsupp_equiv; unfold action, perm_action.
-          rewrite grp_left_id, grp_left_inv; reflexivity.
-        * apply support_fresh; set_solver.
-        * apply support_fresh; subst w.
-          eapply not_elem_of_weaken.
-          -- eapply is_fresh.
-          -- set_solver.
-      + apply support_fresh; subst w; eapply not_elem_of_weaken.
-        * eapply is_fresh.
-        * set_solver.
-      + eapply support_fresh, not_elem_of_weaken.
-        * eauto.
-        * apply support_alpha.
-  Qed.
+        -- eapply is_fresh.
+        -- set_solver.
+    + apply support_fresh; subst w; eapply not_elem_of_weaken.
+      * eapply is_fresh.
+      * set_solver.
+    + eapply support_fresh, not_elem_of_weaken.
+      * eauto.
+      * apply support_alpha.
+Qed. *)
 
-  Lemma alpha_rec_lam_exists_abs m:
+  (* Lemma alpha_rec_lam_exists_abs m:
     ∃ L: NameSet, ∀ a, a ∉ L → alpha_rec (Lam [a]m) ≡ flam [a](alpha_rec m).
   Proof.
     exists (support flam ∪ support m ∪ support (perm_alpha_rec m)); intros.
@@ -516,162 +534,121 @@ Lemma alpha_rec_lam_exists m:
         * eapply is_fresh.
         * set_solver.
       + apply support_fresh; set_solver.
-  Qed.
+  Qed. *) 
 
-  Lemma alpha_rec_respectfull m n : 
-    aeq m n → alpha_rec m ≡ alpha_rec n.
-  Proof. intros; unfold alpha_rec; apply perm_alpha_rec_respectfull; assumption. Qed.
+Lemma perm_empty p : p • ɛ ≡@{Perm} ɛ.
+Proof. unfold action, perm_action; simpl. Admitted.
+
+Definition perm_alpha_rec1 : Term →ₛ X.
+  refine (
+    λₛ⟦ support fvar ∪ support fapp ∪ support flam ⟧ t,
+    alpha_rec t
+  ).
+Proof.
+  - unfold alpha_rec; repeat intro; rewrite H1; reflexivity.
+  - intros a b Sa Sb x; induction x using term_ind_general.
+    + unfold alpha_rec; rewrite action_var; simpl.
+      rewrite fun_equivar, fresh_fixpoint; try (apply support_fresh; set_solver).
+      rewrite !gact_compat, !grp_assoc, grp_right_id, perm_duplicate; reflexivity.
+    + rewrite action_app, !alpha_rec_app, fun_equivar, fresh_fixpoint; try (apply support_fresh; set_solver).
+      apply fsupp_equiv; unfold equiv, prod_equiv, prod_relation; simpl; split; auto.
+    + unfold alpha_rec in *; rewrite <-alpha_rec_perm, grp_right_id. 
+      simpl; set (w := fresh _); set (w' := fresh _).
+      rewrite perm_alpha_rec_lam.
+    
+    unfold alpha_rec. destruct (decide (a = a0)), (decide (b = a0)); subst.
+      * unfold alpha_rec; rewrite !perm_action_equal; reflexivity.
+      * rewrite action_lam, name_action_left.
+        assert (HH: Lam (b,⟨a0,b⟩•x) ≡ Lam (a0,x)). { admit. }
+        etransitivity; [| apply alpha_rec_respectfull; apply HH].
+        rewrite alpha_rec_lam1; set (w := fresh _).
+        rewrite fun_equivar, fresh_fixpoint; try (apply support_fresh; set_solver).
+        rewrite nabs_action; apply fsupp_equiv. *)
+      * admit.
+      * rewrite action_lam. 
+
+    rewrite action_lam, !alpha_rec_lam1; set (w := fresh _); set (w' := fresh _).
+      rewrite fun_equivar, fresh_fixpoint; try (apply support_fresh; set_solver).
+      rewrite nabs_action; apply fsupp_equiv.
+      apply name_abstraction_inv; right; split.
+      * admit.
+      * unfold alpha_rec; rewrite !gact_compat, perm_comm_distr.
+        destruct (decide (a = a0)), (decide (b = a0)); subst.
+        -- rewrite perm_action_equal.
+
+    unfold equiv, fun_supp_equiv; intros p; rewrite action_lam; simpl.
+    set (w := fresh _); set (w' := fresh _).
+    rewrite fun_equivar, fresh_fixpoint; try (apply support_fresh; set_solver).
+    unfold action at 1; unfold name_abstraction_action; simpl.
+    apply fsupp_equiv, name_abstraction_inv; right; split.
+    + apply alpha_class_inv; left; subst w w'; unfold support at 1; unfold support at 6; unfold fun_supp_support; simpl.
+
+  (* Lemma test : a ∉ *)
 End AlphaStructural.
 
-(* Copello *)
-(* Lemma var_perm a p: p • (Var a) = Var (p • a).
-Proof. auto. Defined.
+Definition αCompat (P: Term → Prop) : Prop := 
+  ∀ m n, aeq m n → P m → P n.
 
-Lemma app_perm m n p: p • (App m n) = App (p • m) (p • n).
-Proof. auto. Defined.
+Lemma perm_var t p : p • Var t = Var (p • t).
+Proof. unfold action; simpl; reflexivity. Qed.
 
-Lemma lam_perm a m p: p • (Lam (a,m)) = Lam (p • a, p • m).
-Proof. auto. Defined.
-
-(* Lemma neutral_equal (t: Term): ɛ • t = t.
-Proof. unfold action,PermAction_instance_0; simpl. Admitted. *)
-
-Definition αCompat `{Equiv X} (P: X → Type) := ∀ m n, m ≡ n → P m → P n.
-
-Lemma abs_nominal_rec P (C: αCompat P):
-  (∀ a m, (∀ p, P (p • m)) → P (Lam (a, m))) →
-  ∀ a m, (∀ p, P (p • m)) → (∀ p, P (p • (Lam (a,m)))).
+Lemma perm_ind:
+  ∀ P: Term → Prop, αCompat P →
+    (∀ t, P (Var t)) →
+    (∀ m n, P m → P n → P (App m n)) →
+    (∀ a m, (∀ p, P (p • m)) → P (Lam (a,m))) →
+    ∀ t, P t.
 Proof.
-  intros. rewrite lam_perm. apply X. intros.
-  eapply C; [symmetry; apply gact_compat |]. auto.
-Defined.
+  intros P Compat Hvar Happ Hlam t.
+  apply (Compat (ɛ • t) _ (gact_id t)). 
+  apply (@term_ind_general (fun t => ∀ p, P (p • t))).
+    + intros; rewrite perm_var; apply Hvar.
+    + intros; rewrite perm_app; apply Happ; auto.
+    + intros; rewrite perm_lam; apply Hlam; intros.
+      eapply (Compat ((p + p0) • t0)). 
+      * symmetry; apply gact_compat. 
+      * apply H.
+Qed. 
 
-Definition term_rect_perm_general (P : Term → Type) (Compat: αCompat P) 
-  (fvar : ∀ a p, P (p • (Var a)))
-  (fapp : ∀ m, (∀ p, P (p • m)) → ∀ n, (∀ p, P (p • n)) → (∀ p, P (p • App m n)))
-  (flam : ∀ a m, (∀ p, P (p • m)) → P (Lam (a,m))): 
-  ∀ t, P t.
-Proof.
-  intros; apply (Compat (ɛ • t)); [apply gact_id |].
-  apply (term_rect_general (fun t => ∀ p, P (p • t))); intros.
-  - apply fvar.
-  - eapply fapp; eauto.
-  - apply abs_nominal_rec.
-    + auto.
-    + intros; apply flam; auto.
-    + auto.
-Defined.
-
-(* Lemma perm_general P C Hvar Happ Hlam t p: 
-  term_rect_perm_general P C Hvar Happ Hlam t = X
-  term_rect_perm_general P C Hvar Happ Hlam (p • t) nil.
-Proof. unfold neutral.  *)
-
-(* #[universes(template=yes)]
-Class αCompat `{Equiv X} (P: X → Type) := {
-  compat: ∀ m n, m ≡ n → P m → P n
-}. *)
-
-(* #[export] Instance αCompatProper `{Equiv X} (P: X → Prop) `{αCompat X P}: Proper (equiv ==> impl) P.
-Proof. intros ? ? HH ?; eapply compat; eauto. Qed.
-
-#[export] Instance αCompatProperFlip `{Equiv X} (P: X → Prop) `{αCompat X P}: Proper (equiv ==> flip impl) P.
-Proof. intros ? ? HH ?; eapply compat; eauto. Admitted. *)
-
-Lemma lam_abs_equiv (am bn: [𝔸]Term): am ≡ bn → Lam am ≡ Lam bn.
+(* Provado no trabalho do Copello *)
+Lemma lala (a b: Name) (t: Term) : 
+  b ∉ (fv (Lam (a,t))) → aeq (Lam (a,t)) (Lam (b, ⟨a,b⟩•t)).
 Proof. Admitted.
 
-Lemma alpha_ind_lam_aux:
-  ∀ P: Term → Type, αCompat P →
-    ∀ L: NameSet, (∀ b m, b ∉ L → (∀ p, P (p • m)) → P (Lam [b]m)) →
-      ∀ a m, (∀ p, P (p • m)) → P (Lam [a]m).
+Lemma lam_rename:
+  ∀ P: Term → Prop, αCompat P →
+    ∀ L : NameSet,
+      (∀ b m, b ∉ L → (∀ p, P (p • m)) → P (Lam (b,m))) →
+      ∀ a m, (∀ p, P (p • m)) → P (Lam (a,m)).
 Proof.
-  intros ? Compat L HL a m ?; set (z := fresh (support a ∪ support m ∪ L)).
-  apply Compat with (Lam [z](⟨a,z⟩•m)).
-  - symmetry; apply lam_abs_equiv, name_abstraction_rename, support_fresh.
-    subst z; eapply not_elem_of_weaken.
-    + eapply is_fresh.
-    + apply union_subseteq_l', union_subseteq_r'; set_solver.
-  - apply HL.
-    + subst z; eapply not_elem_of_weaken.
-      * eapply is_fresh.
-      * set_solver.
-    + intros; eapply Compat; [symmetry; apply gact_compat | auto].
-Defined.
+  intros P Compat L HLam a m Hp. set (c := fresh (support (Lam (a,m)) ∪ L)).
+  apply (Compat (Lam (c, ⟨a,c⟩•m))).
+  - symmetry. apply lala. subst c; unfold support, Support_instance_0; simpl.
+    eapply not_elem_of_weaken; [eapply is_fresh | set_solver].
+  - apply HLam.
+    + subst c. eapply not_elem_of_weaken; [eapply is_fresh | set_solver].
+    + intros; eapply (Compat ((⟨a,c⟩ + p) • m)).
+      * symmetry. apply gact_compat.
+      * apply Hp.
+Qed.
 
-Definition alpha_rect_copello:
-  ∀ P : Term → Type, αCompat P →
+Definition alpha_ind :
+  ∀ P: Term → Prop, αCompat P →
     (∀ a, P (Var a)) →
     (∀ m n, P m → P n → P (App m n)) →
-    {L: NameSet & ∀ a m, a ∉ L → P m → P (Lam [a]m)} →
-  ∀ t, P t.
+    {L : NameSet & ∀ a m, a ∉ L → P m → P (Lam (a,m))} →
+    ∀ m, P m.
 Proof.
-  intros P Compat Hvar Happ [L Habs] t; eapply Compat; [eapply gact_id |].
-  apply term_rect_perm_general.
-  - assumption.
-  - intros; rewrite var_perm; auto.
-  - intros; rewrite app_perm; auto.
-  - intros; apply (alpha_ind_lam_aux _ Compat) with L; intros.
-    + apply Habs; [| eapply Compat; [eapply gact_id |]]; auto.  
-    + apply X. (* eapply Compat; [symmetry; eapply gact_compat |]; auto. *)
-Defined.
-
-Definition alpha_rec_copello := (fun P: Term → Set => alpha_rect_copello P).
-Definition alpha_ind_copello := (fun P: Term → Prop => alpha_rect_copello P).
-
-(* Lemma perm_general_lam P C Hvar Happ Hlam a m X p: 
-  term_rect_perm_general P C Hvar Happ Hlam (p • Lam (a,m)) =
-  Hlam a m (term_rect_perm_general P C Hvar Happ Hlam ) p.
-Proof. unfold term_rect_perm_general; simpl.  Qed.  *)
-
-Section alpha_it.
-  Context {A: Set} (L: NameSet) 
-    (f_var: Name → A) (f_app: A → A → A) (f_lam: Name → A → A).
-
-  Definition alpha_it (t: Term): A :=
-    alpha_rec_copello (fun _ => A) (fun _ _ _ => id)
-      f_var (fun _ _ => f_app) (existT L (fun a _ _ r => f_lam a r )) t.
-
-  Lemma alpha_it_var a: alpha_it (Var a) = f_var a.
-  Proof. lazy. auto. Qed.
-
-  Lemma alpha_it_app m n: alpha_it (App m n) = f_app (alpha_it m) (alpha_it n).
-  Proof. lazy. auto. Qed.
-
-  Lemma alpha_it_lam a m: alpha_it (Lam [a]m) = 
-    let b := fresh (support a ∪ support m ∪ L) in  
-    f_lam b (alpha_it (⟨a,b⟩•m)).
-  Proof.
-    simpl; set (X := (fresh (support a ∪ support m ∪ L))).
-    lazy [alpha_it alpha_rec_copello alpha_rect_copello term_rect_perm_general alpha_ind_lam_aux abs_nominal_rec term_rect_general eq_rect_r eq_rect id].
-    simpl. 
-    
-    
-    unfold alpha_it, alpha_rec_copello, alpha_rect_copello, term_rect_perm_general, abs_nominal_rec. simpl [id].
-
-
-
-    simpl; unfold alpha_it; simpl.
-    unfold alpha_ind_lam_aux; simpl; unfold eq_rect_r; simpl.
-    f_equal.
-    + f_equal. admit.
-    + unfold neutral, perm_neutral. rewrite perm_general. f_equal.
-      * admit.   
-      * unfold neutral.
-
-
-    lazy [alpha_it alpha_rec_copello alpha_rect_copello alpha_ind_lam_aux
-          term_rect_perm_general id]. simpl. unfold alpha_ind_lam_aux. simpl.
-    
-    alpha_rec_copello]. alpha_rect_copello id]. 
-          term_rect_perm_general]. term_rect_general]. simpl. eq_rect_r eq_rect].
-    cbv [id]. rewrite perm_general_lam.
-
-End alpha_it.
-
-
-Lemma alpha_it_var 
-Copello *)
+  intros P Compat Hvar Happ [L HLam].
+  apply perm_ind.
+  - apply Compat.
+  - apply Hvar.
+  - apply Happ.
+  - apply lam_rename with L; auto.
+    intros b m HbL HP; apply HLam.
+    + assumption.
+    + apply (Compat (ɛ • m)); [apply gact_id | apply HP].
+Qed.
 
 Section TermLength.
 
@@ -726,31 +703,20 @@ Section TermLength.
   Lemma term_lenght_respectfull: ∀ m n, m ≡ n → term_length m = term_length n.
   Proof. Admitted.
 
-  Lemma length_equal A:
-    ∀ t, term_length t = alpha_rec A length_fvar length_fapp length_flam (lamFCB := length_flam_fcb) t.
+  Lemma length_equal:
+    ∀ t, term_length t = alpha_rec length_fvar length_fapp length_flam (lamFCB := length_flam_fcb) t.
   Proof.
     apply alpha_ind.
-    - apply Build_αCompat; intros; inversion H; subst;
+    - repeat intro; inversion H; subst;
       erewrite alpha_rec_respectfull, term_lenght_respectfull; eauto; symmetry.
       + assumption.
       + constructor; assumption.
     - intros; rewrite alpha_rec_var; simpl; reflexivity.
     - intros ? ? A B; rewrite alpha_rec_app; simpl in *; rewrite A, B; reflexivity.
-    - eexists. intros. pose proof alpha_rec_lam_exists.
-      + simpl; auto.
-      + eapply H.   
-    
-    exists ∅. intros. rewrite alpha_rec_lam. set (w := fresh _). simpl in *.
-    
-    destruct (alpha_rec_lam_exists ∅ length_fvar length_fapp length_flam (lamFCB := length_flam_fcb) m).
-      rewrite H1. 
-
-
-
-    - rewrite alpha_rec_app, <-IHt1, <-IHt2; simpl; reflexivity.
-    - pose proof (alpha_rec_lam_exists_abs ∅ length_fvar length_fapp length_flam (lamFCB := length_flam_fcb)) t.
-      destruct H as [L ?].  rewrite H.
-      + simpl; rewrite IHt; reflexivity.
-      + 
+    - eexists; intros. simpl.
+      pose proof (alpha_rec_lam length_fvar length_fapp length_flam (lamFCB := length_flam_fcb) a m).
+      simpl in *. set (c := fresh _) in *.
+      rewrite H1. f_equal.
+    rewrite alpha_rec_lam.
 
 End TermLength.

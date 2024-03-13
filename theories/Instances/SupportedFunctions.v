@@ -85,8 +85,17 @@ Section FunSuppProperties.
     Qed.
 End FunSuppProperties.
 
-Lemma fsupp_equiv `{Nominal X, Nominal Y} (f: X →ₛ Y) x y: x ≡ y → f x ≡ f y.
-Proof. intros XY; rewrite XY; reflexivity. Qed.
+Lemma fsupp_equiv `{Nominal X, Nominal Y} (f: X →ₛ Y) (x x' : X) : x ≡ x' → f x ≡ f x'.
+Proof. intros XX; rewrite XX; reflexivity. Qed.
+
+Lemma fsupp_equiv2 `{Nominal X, Nominal Y, Nominal Z} (f: X →ₛ (Y →ₛ Z)) (x x' : X) (y y' : Y): 
+  x ≡ x' → y ≡ y' → f x y ≡ f x' y'.
+Proof. intros XX YY; rewrite XX, YY; reflexivity. Qed.
+
+Lemma fsupp_equiv3 `{Nominal X, Nominal Y, Nominal Z, Nominal W}
+ (f: X →ₛ (Y →ₛ (Z →ₛ W))) (x x' : X) (y y' : Y) (z z' : Z): 
+  x ≡ x' → y ≡ y' → z ≡ z' → f x y z ≡ f x' y' z'.
+Proof. intros XX YY ZZ; rewrite XX, YY, ZZ; reflexivity. Qed.
 
 Lemma fsupp_action `{Nominal X, Nominal Y} (p : Perm) (f : X →ₛ Y) (x : X):
   (p • f)(x) ≡ p • f(-p • x).

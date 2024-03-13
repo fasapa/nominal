@@ -1,6 +1,8 @@
 CoqMakefile
 CoqMakefile.conf
 
+*.code-workspace
+
 .*.aux
 .*.d
 *.a
