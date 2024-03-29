@@ -3,12 +3,152 @@ From Nominal Require Import Instances.Name.
 
 Require Import FunInd.
 
-Inductive Term: Type :=
+Inductive Term : Set :=
 | Var: Name → Term
 | App: Term → Term → Term
-| Lam: (Name * Term) → Term.
+| Lam: Name → Term → Term.
 
-Definition term_rect_general := fun (P : Term → Type)
+Fixpoint atms (t: Term) : NameSet :=
+  match t with
+  | Var a => {[ a ]}
+  | App t1 t2 => (atms t1) ∪ (atms t2)
+  | Lam a t => {[ a ]} ∪ (atms t)
+  end.
+
+Fixpoint term_action (p: Perm) (t: Term): Term :=
+  match t with
+  | Var a => Var (p • a)
+  | App m n => App (term_action p m) (term_action p n)
+  | Lam a m => Lam (p • a) (term_action p m)
+  end.
+
+Instance TermAction: PermAction Term := term_action.
+
+Lemma term_perm_var p a : p • (Var a) = Var (p • a).
+Proof. unfold action; simpl; reflexivity. Qed.
+
+Lemma term_perm_app p m n : p • (App m n) = App (p • m) (p • n).
+Proof. unfold action; simpl; reflexivity. Qed.
+
+Lemma term_perm_abs p a m : p • (Lam a m) = Lam (p • a) (p • m).
+Proof. unfold action; simpl; reflexivity. Qed.
+
+Section PermTerm.
+(* Estes lemas são basicamente demonstrando que Term forma PermT com a igualdade sintática.
+  Foram necessários para demonstrar term_perm_alpha, necessário para demonstrar a equivalência
+  de alphaCof. *)
+
+Lemma term_perm_proper : Proper ((≡@{Perm}) ==> eq ==> eq) term_action.
+Proof.
+  repeat intro; unfold equiv,perm_equiv in *; subst.
+  induction y0.
+  - do 2 rewrite term_perm_var; f_equal; apply H.
+  - do 2 rewrite term_perm_app; f_equal; auto.
+  - do 2 rewrite term_perm_abs; f_equal; auto.
+Qed.
+
+Lemma term_perm_id (t : Term): ɛ•t = t.
+Proof.
+  induction t.
+  - rewrite term_perm_var; auto.
+  - rewrite term_perm_app; rewrite IHt1, IHt2; reflexivity.
+  - rewrite term_perm_abs; rewrite IHt; auto.
+Qed.
+
+Lemma term_perm_compat p q (t : Term): p•(q•t) = (q + p)•t.
+Proof.
+  induction t.
+  - repeat rewrite term_perm_var; f_equal; apply gact_compat.
+  - repeat rewrite term_perm_app; f_equal; auto.
+  - repeat rewrite term_perm_abs; f_equal; [apply gact_compat |]; auto.
+Qed. 
+
+Lemma term_perm_swap_distr a b (p : Perm) (x: Term) : p•⟨a,b⟩• x = ⟨p•a, p•b⟩•p•x.
+Proof. rewrite 2term_perm_compat; apply term_perm_proper; auto; apply perm_comm_distr. Qed.
+
+End PermTerm.
+
+Inductive aeq: Term → Term → Prop :=
+| AeqVar: ∀ a, aeq (Var a) (Var a)
+| AeqApp: ∀ m m' n n', aeq m m' → aeq n n' → aeq (App m n) (App m' n')
+| AeqAbs: ∀ a b m n, 
+  (∀ c, c ≠ a → c ≠ b → c ∉ atms m → c ∉ atms n → 
+    aeq (⟨a,c⟩•m) (⟨b,c⟩•n)) → aeq (Lam a m) (Lam b n).
+
+Inductive aeqCof: Term → Term → Prop :=
+| AeqVarC: ∀ a, aeqCof (Var a) (Var a)
+| AeqAppC: ∀ m m' n n', aeqCof m m' → aeqCof n n' → aeqCof (App m n) (App m' n')
+| AeqAbsC: ∀ (L : NameSet) a b m n, 
+  (∀ c, c ∉ L → aeqCof (⟨a,c⟩•m) (⟨b,c⟩•n)) → aeqCof (Lam a m) (Lam b n).
+
+Lemma term_perm_alpha p m n: aeqCof m n → aeqCof (p • m) (p • n).
+Proof. 
+  induction 1.
+  - rewrite term_perm_var; constructor.
+  - repeat rewrite term_perm_app; constructor; auto.
+  - repeat rewrite term_perm_abs; 
+      apply AeqAbsC with (L := ({[a;b]} ∪ (perm_dom p) ∪ L)); intros c Hc.
+      rewrite <-(perm_notin_domain_id p c); try set_solver.
+      do 2 rewrite <-term_perm_swap_distr; apply H0; set_solver.
+Qed.
+
+Instance AeqCofRef: Reflexive aeqCof.
+Proof.
+  intros t; induction t.
+  - constructor.
+  - constructor; auto.
+  - econstructor; intros; apply term_perm_alpha; eauto.
+  Unshelve.
+  exact {[t]}. (* anything *)
+Qed.
+
+Instance AeqCofSymm: Symmetric aeqCof.
+Proof.
+  repeat intro; induction H.
+  - constructor.
+  - constructor; auto.
+  - apply AeqAbsC with L; intros; auto.
+Qed.
+
+Instance AeqCofRefTrans: Transitive aeqCof.
+Proof. 
+  repeat intro; generalize dependent z; induction H; auto; intros; inversion H1; subst.
+  - constructor; auto.
+  - apply AeqAbsC with (L := (L0 ∪ L)); intros; apply H0; set_solver.
+Qed.
+
+Instance AeqCofEquiv : Equivalence aeqCof.
+Proof. split; typeclasses eauto. Qed.
+
+Instance TermEquiv : Equiv Term := aeqCof.
+
+Instance TermPermT : PermT Term.
+Proof.
+  split.
+  - typeclasses eauto.
+  - intros p q HPQ x y HXY; unfold equiv,perm_equiv,TermEquiv in *; induction HXY; subst.
+    + rewrite !term_perm_var, !HPQ; reflexivity.
+    + rewrite !term_perm_app; constructor; auto.
+    + rewrite !term_perm_abs; apply AeqAbsC with (L := perm_dom p ∪ perm_dom q ∪ L); intros.
+      rewrite <-(perm_notin_domain_id p c) at 1; [| set_solver];
+      rewrite <-(perm_notin_domain_id q c) at 2; [| set_solver]; 
+      rewrite <-!term_perm_swap_distr; apply H0; set_solver.
+  - intros; rewrite term_perm_id; reflexivity.
+  - intros; rewrite term_perm_compat; reflexivity.
+Qed. 
+
+Fixpoint fv (t: Term): NameSet :=
+  match t with
+  | Var a => {[ a ]}
+  | App m n => (fv m) ∪ (fv n)
+  | Lam a m => (fv m) ∖ {[ a ]}
+  end.
+
+Instance TermSupport : Support Term := fv.
+
+Instance TermNominal : Nominal Term.
+
+(* Definition term_rect_general := fun (P : Term → Type)
   (fvar : ∀ a : Name, P (Var a))
   (fapp : ∀ t1: Term, P t1 → ∀ t2: Term, P t2 → P (App t1 t2))
   (flam : ∀ a : Name, ∀ t: Term, P t → P (Lam (a,t))) =>
@@ -17,73 +157,88 @@ Definition term_rect_general := fun (P : Term → Type)
     | Var a => fvar a
     | App t1 t2 => fapp t1 (F t1) t2 (F t2)
     | Lam (a, t) => flam a t (F t)
-    end.
+    end. *)
 
-Definition term_rec_general (P : Term → Set) := term_rect_general P.
-Definition term_ind_general (P : Term → Prop) := term_rect_general P.
+(* Definition term_rec_general (P : Term → Set) := term_rect_general P.
+Definition term_ind_general (P : Term → Prop) := term_rect_general P. *)
 
-Fixpoint atm (t: Term) : NameSet.
+(* Fixpoint atm (t: Term) : NameSet.
 Proof.
   apply term_rec_general.
   - exact (λ a, {[ a ]}).
   - exact (λ _ fm _ fn, fm ∪ fn).
   - exact (λ a _ fm, {[ a ]} ∪ fm).
   - exact t.
-Defined.
+Defined. *)
 
-Fixpoint atm1 (t: Term) : NameSet :=
+(* 
+Definition subst_name (c a b: Name): Name :=
+  if Atom.dec c b then a else c.
+
+Lemma subst_neq (a b c: Name) : c ≠ b → subst_name c a b = c.
+Proof. intros; unfold subst_name; destruct Atom.dec; subst; [congruence | reflexivity]. Qed.
+
+Lemma subst_eq (a b c: Name) : c = b → subst_name c a b = a.
+Proof. intros; unfold subst_name; destruct Atom.dec; subst; [reflexivity | congruence]. Qed.
+
+Fixpoint subst (t: Term) (a b: Name) : Term :=
   match t with
-  | Var a => {[ a ]}
-  | App t1 t2 => (atm1 t1) ∪ (atm1 t2)
-  | Lam (a,t) => {[ a ]} ∪ (atm1 t)
+  | Var c => Var (subst_name c a b)
+  | App t1 t2 => App (subst t1 a b) (subst t2 a b)
+  | Lam (c,t) => Lam ((subst_name c a b), (subst t a b))
   end.
 
-Infix "=n" := Atom.dec (at level 90, no associativity).
+Lemma subst_notin_atm t a b: b ∉ atm t → subst t a b = t.
+Proof. induction t using term_ind_general; intros; simpl in *.
+  - rewrite subst_neq; [reflexivity | set_solver].
+  - rewrite IHt1, IHt2; set_solver.
+  - rewrite IHt.
+    + rewrite subst_neq; [reflexivity | set_solver].
+    + set_solver.  
+Qed.
 
-Definition subst_name (a b c: Name): Name :=
-  if a =n c then b else a.
+Lemma subst_equal m a: subst m a a = m.
+Proof. 
+  induction m using term_ind_general; intros; simpl in *. 
+  - destruct (decide (a0 = a)); [rewrite subst_eq | rewrite subst_neq]; subst; auto.
+  - rewrite IHm1, IHm2; reflexivity.
+  - destruct (decide (a0 = a)); [rewrite subst_eq | rewrite subst_neq]; 
+      subst; try rewrite IHm; auto.
+Qed.
 
-Fixpoint subst (t: Term) (a' a: Name) : Term :=
-  match t with
-  | Var c => Var (subst_name c a' a)
-  | App t1 t2 => App (subst t1 a' a) (subst t2 a' a)
-  | Lam (c,t) => Lam ((subst_name c a' a), (subst t a' a))
-  end.
+Lemma subst_var a b c : a = c → subst (Var a) b c = Var b.
+Proof. intros; simpl; rewrite subst_eq; auto. Qed.
 
-Lemma subst_notin_atm t a b: b ∉ atm1 t → subst t a b = t.
-Proof. induction t; intros.
-  - simpl in *; unfold subst_name. admit.
-  - admit.
-  - admit.
-Admitted.
+Lemma subst_var_neq a b c : a ≠ c → subst (Var a) b c = Var a.
+Proof. intros; simpl; rewrite subst_neq; auto. Qed.
 
 Inductive aeq: Term → Term → Prop :=
 | AeqVar: ∀ a, aeq (Var a) (Var a)
 | AeqApp: ∀ m n m' n', aeq m m' → aeq n n' → aeq (App m n) (App m' n')
 | AeqAbs: ∀ (a b: Name) (m n: Term), 
-    (∀ c, (c <> a ∧ c <> b) → (c ∉ atm1 m ∧ c ∉ atm1 n) → aeq (subst m c a) (subst n c b)) → 
+    (∀ c, c ≠ a → c ≠ b → c ∉ atm m → c ∉ atm n → aeq (subst m c a) (subst n c b)) → 
     aeq (Lam (a,m)) (Lam (b,n)).
 
-(* Necessario alguma relacao proper sobre os argumentos de aeq para
-  facilitar reescrita *)
-
-Lemma subst_equal: ∀ m a, (subst m a a) = m.
-Proof. 
-  induction m using term_ind_general; intros; simpl. 
-  - unfold subst_name; destruct (_ =n _); subst; constructor.
-  - rewrite IHm1, IHm2; reflexivity.
-  - unfold subst_name; destruct (_ =n _); subst.
-    + rewrite IHm; reflexivity.
-    + rewrite IHm; reflexivity.
-Qed.     
+Lemma aeq_subst_notin: ∀ m n a c, 
+  c ∉ atm m → c ∉ atm n → aeq m n → aeq (subst m a c) (subst n a c).
+Proof. intros; do 2 (try rewrite subst_notin_atm); auto. Qed.
 
 Lemma aeq_subst: ∀ m n a c, 
-  c ≠ a → c ∉ atm1 m → c ∉ atm1 n →
-  aeq m n → aeq (subst m c a) (subst n c a).
-Proof. intros; induction H. Admitted.
+  aeq m n → aeq (subst m a c) (subst n a c).
+Proof.
+  intros; inversion H.
+  - destruct (decide (a0 = c)); [rewrite subst_var | rewrite subst_var_neq]; auto; constructor.
+  - admit.
+  - simpl; constructor; intro w; intros.
+    destruct (decide (a0 = b)); subst.
+    +    
+   destruct (decide (a0 = c)), (decide (b = c)); subst.
+    + rewrite subst_eq; auto. specialize (H0 a).
+      
+     apply H0.
 
-(* #[export] Instance subst_proper: Proper (aeq ==> eq ==> eq ==> aeq) subst.
-Proof. repeat intro; subst; apply aeq_subst; auto. Qed. *)
+Instance subst_proper: Proper (aeq ==> eq ==> eq ==> aeq) subst.
+Proof. repeat intro; subst. apply aeq_subst; auto.
 
 #[export] Instance: Equiv Term := aeq.
 #[export] Instance: Reflexive aeq.
@@ -111,25 +266,14 @@ Proof. Admitted.
 #[export] Instance: Equivalence aeq.
 Proof. split; typeclasses eauto. Qed.
 
-#[export] Instance: Equiv Term := aeq.
+#[export] Instance: Equiv Term := aeq. *)
 
-Fixpoint taction (p: Perm) (t: Term): Term :=
+(* Fixpoint taction (p: Perm) (t: Term): Term :=
   match t with
   | Var a => Var (p • a)
   | App m n => App (taction p m) (taction p n)
   | Lam (a,m) => Lam ((p • a), (taction p m))
-  end.
-
-#[export] Instance: PermAction Term := taction.
-
-Fixpoint fv (t: Term): NameSet :=
-  match t with
-  | Var a => {[ a ]}
-  | App m n => (fv m) ∪ (fv n)
-  | Lam (a,m) => (fv m) ∖ {[ a ]}
-  end.
-
-#[export] Instance: Support Term := fv.
+  end. *)
 
 #[export] Instance: PermT Term.
 Proof.
