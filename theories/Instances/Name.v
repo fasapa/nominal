@@ -66,5 +66,8 @@ Proof. unfold action, name_action; apply perm_swap_left. Qed.
 Lemma name_action_right (a b: Name) : ⟨a,b⟩ • b ≡ a.
 Proof. unfold action, name_action; apply perm_swap_right. Qed.
 
+Lemma name_action_neither (a b c: Name) : c ≠ a → c ≠ b → ⟨a,b⟩ • c ≡ c.
+Proof. intros; unfold action, name_action; apply perm_swap_neither; auto. Qed.
+
 Lemma nameset_fresh_respect (A B: NameSet): A ≡ B → fresh A ≡ fresh B.
 Proof. intros AB; rewrite AB; reflexivity. Qed.

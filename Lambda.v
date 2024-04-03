@@ -63,23 +63,40 @@ Proof.
   - repeat rewrite term_perm_abs; f_equal; [apply gact_compat |]; auto.
 Qed. 
 
-Lemma term_perm_swap_distr a b (p : Perm) (x: Term) : p•⟨a,b⟩• x = ⟨p•a, p•b⟩•p•x.
+Lemma term_perm_swap_distr a b (p : Perm) (x: Term) : p•⟨a,b⟩•x = ⟨p•a, p•b⟩•p•x.
 Proof. rewrite 2term_perm_compat; apply term_perm_proper; auto; apply perm_comm_distr. Qed.
+
+Lemma term_action_neither (a b: Name) (t: Term) : 
+  a ∉ atms t → b ∉ atms t → ⟨a,b⟩•t = t.
+Proof.
+  induction t; intros.
+  - rewrite term_perm_var,name_action_neither; simpl in *; set_solver.
+  - rewrite term_perm_app,IHt1,IHt2; simpl in *; set_solver.
+  - rewrite term_perm_abs,name_action_neither,IHt; simpl in *; set_solver.
+Qed.
 
 End PermTerm.
 
-Inductive aeq: Term → Term → Prop :=
+(* Inductive aeq: Term → Term → Prop :=
 | AeqVar: ∀ a, aeq (Var a) (Var a)
 | AeqApp: ∀ m m' n n', aeq m m' → aeq n n' → aeq (App m n) (App m' n')
 | AeqAbs: ∀ a b m n, 
   (∀ c, c ≠ a → c ≠ b → c ∉ atms m → c ∉ atms n → 
-    aeq (⟨a,c⟩•m) (⟨b,c⟩•n)) → aeq (Lam a m) (Lam b n).
+    aeq (⟨a,c⟩•m) (⟨b,c⟩•n)) → aeq (Lam a m) (Lam b n). *)
 
 Inductive aeqCof: Term → Term → Prop :=
 | AeqVarC: ∀ a, aeqCof (Var a) (Var a)
 | AeqAppC: ∀ m m' n n', aeqCof m m' → aeqCof n n' → aeqCof (App m n) (App m' n')
 | AeqAbsC: ∀ (L : NameSet) a b m n, 
   (∀ c, c ∉ L → aeqCof (⟨a,c⟩•m) (⟨b,c⟩•n)) → aeqCof (Lam a m) (Lam b n).
+
+(* Lemma term_perm_alpha_ p m n: aeq m n → aeq (p • m) (p • n).
+Proof. 
+  induction 1.
+  - rewrite term_perm_var; constructor.
+  - repeat rewrite term_perm_app; constructor; auto.
+  - repeat rewrite term_perm_abs; constructor; intros. *)
+
 
 Lemma term_perm_alpha p m n: aeqCof m n → aeqCof (p • m) (p • n).
 Proof. 
@@ -92,7 +109,28 @@ Proof.
       do 2 rewrite <-term_perm_swap_distr; apply H0; set_solver.
 Qed.
 
+(* Theorem aeqs_equal m n: aeq m n <-> aeqCof m n.
+Proof.
+  split; induction 1.
+  - constructor.
+  - constructor; auto.
+  - apply AeqAbsC with (L := ({[a;b]} ∪ (atms m) ∪ (atms n))); intros c Hc;
+    apply H0; set_solver.
+  - constructor.
+  - constructor; auto.
+  - constructor; intros; destruct (exist_fresh ({[a;b;c]} ∪ (atms m) ∪ (atms n) ∪ L)) as [d Hd].
+    assert (HH: d ∉ L). { set_solver. } specialize (H0 d HH).
+    apply (term_perm_alpha_ (⟨c,d⟩)) in H0. 
+    rewrite 2(term_perm_swap_distr _ _ ⟨c,d⟩) in H0.
+    rewrite name_action_right in H0.
+    rewrite 2name_action_neither in H0; [| set_solver | set_solver | set_solver | set_solver].
+    assert (HH2 : ⟨ c, d ⟩ • m = m). { apply term_action_neither; set_solver. }
+    assert (HH3 : ⟨ c, d ⟩ • n = n). { apply term_action_neither; set_solver. }
+    rewrite HH2,HH3 in H0; auto.
+Qed. *)
+    
 Instance AeqCofRef: Reflexive aeqCof.
+
 Proof.
   intros t; induction t.
   - constructor.
