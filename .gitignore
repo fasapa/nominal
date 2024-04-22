@@ -1,6 +1,7 @@
 CoqMakefile
 CoqMakefile.conf
 
+_opam
 *.code-workspace
 
 .*.aux
