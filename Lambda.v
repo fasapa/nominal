@@ -484,9 +484,12 @@ Proof.
 Qed. *)
 
 Section AlphaStructural.
-  Context `{Nominal X} 
-  (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : [𝔸]X →ₛ X) 
-  {lamFCB : FCB flam}.
+  Context `{Nominal X} (L : NameSet).
+  Context (fvar : Name →ₛ X) (fapp : X →ₛ X →ₛ X) (flam : Name →ₛ X →ₛ X).
+  Context (fvarL : f_supp fvar ⊆ L) (fappL : f_supp fapp ⊆ L) (flamL : f_supp fvar ⊆ L).
+
+  (*(flam : [𝔸]X →ₛ X) *)
+  (* {lamFCB : FCB flam}. *)
 
   Local Lemma ft_flam (Fm: Perm →ₛ X) a p (Sp: NameSet): 
     ∃ c : Name, (c ∉ Sp) ∧ c # flam [c](Fm (⟨ a, c ⟩ + p)).
