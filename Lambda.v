@@ -485,13 +485,14 @@ Qed. *)
 
 Section AlphaStructural.
   Context `{Nominal X} 
-  (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : [𝔸]X →ₛ X) 
-  {lamFCB : FCB flam}.
+  (A : NameSet)
+  (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : [𝔸]X →ₛ X) {lamFCB : FCB flam}
+  (fvarA : f_supp fvar = A) (fappA : f_supp fapp = A) (flamA : f_supp flam = A).
 
-  Local Lemma ft_flam (Fm: Perm →ₛ X) a p (Sp: NameSet): 
-    ∃ c : Name, (c ∉ Sp) ∧ c # flam [c](Fm (⟨ a, c ⟩ + p)).
+  Local Lemma ft_flam (Fm: Perm →ₛ X) a p: 
+    ∃ c : Name, (c ∉ A) ∧ c # flam [c](Fm (⟨ a, c ⟩ + p)).
   Proof.
-    destruct (exist_fresh (Sp ∪ support flam)) as [w Hw]; exists w; split.
+    destruct (exist_fresh (A ∪ support flam)) as [w Hw]; exists w; split.
     - set_solver.
     - destruct lamFCB as [d [? Hd]].
       specialize (Hd [d](⟨d,w⟩•(Fm (⟨a,w⟩ + p)))).
@@ -501,26 +502,26 @@ Section AlphaStructural.
   Qed.
 
   Definition g_var (a: Name): Perm →ₛ X.
-    refine (λₛ⟦ support fvar ∪ support a⟧ p : Perm, fvar (p • a)).
+    refine (λₛ⟦ A ∪ support a ⟧ p : Perm, fvar (p • a)).
   Proof.
     - intros ? ? HH; rewrite HH; reflexivity.
-    - intros w z []%not_elem_of_union []%not_elem_of_union p;
+    - intros w z ? ? p;
       unfold action at 3; unfold PermActionPerm;
       rewrite <-2!gact_compat, <-perm_inv, (fresh_fixpoint _ _ a);
-        try (apply support_fresh; assumption);
+        try (apply support_fresh; set_solver);
         rewrite perm_inv at 2; rewrite <-fsupp_action, fresh_fixpoint;
-          try (apply support_fresh; assumption); reflexivity.
+          try (apply support_fresh; set_solver); reflexivity.
   Defined.
 
   Definition g_app (Fm Fn: Perm →ₛ X): Perm →ₛ X.
-    refine (λₛ⟦ support fapp ∪ support Fm ∪ support Fn⟧ p, fapp (Fm p, Fn p)).
+    refine (λₛ⟦ A ∪ support Fm ∪ support Fn⟧ p, fapp (Fm p, Fn p)).
   Proof.
     - intros ? ? HH; rewrite HH; reflexivity.
-    - intros w z [[]%not_elem_of_union]%not_elem_of_union [[]%not_elem_of_union]%not_elem_of_union p.
-      rewrite <-(fresh_fixpoint w z Fm) at 1; try (apply support_fresh; assumption);
-      rewrite <-(fresh_fixpoint w z Fn) at 1; try (apply support_fresh; assumption);
+    - intros w z ? ? p.
+      rewrite <-(fresh_fixpoint w z Fm) at 1; try (apply support_fresh; set_solver);
+      rewrite <-(fresh_fixpoint w z Fn) at 1; try (apply support_fresh; set_solver);
       rewrite <-2!fun_equivar, <-prod_act; rewrite perm_inv at 2; rewrite <-fsupp_action;
-      rewrite fresh_fixpoint; try (apply support_fresh; assumption); reflexivity.
+      rewrite fresh_fixpoint; try (apply support_fresh; unfold support,fun_supp_support; rewrite fappA; set_solver); reflexivity.
   Defined.
 
   Definition g_lam (a: Name) (m: Term) (Fm: Perm →ₛ X): Perm →ₛ X.
