@@ -365,28 +365,6 @@ Admitted. *)
 From Nominal Require Import Instances.SupportedFunctions
   Instances.Name Instances.Prod Instances.Perm.
 
-Definition FCB `{Nominal X, Nominal Y} (f: X →ₛ Y) :=
-  { a | a ∉ (support f) ∧ (∀ x: X, a # (f x)) }.
-
-Theorem freshness_theorem `{Nominal X} (f: Name →ₛ X): 
-  ∀ a b, (∃ (c: Name), c ∉ support f ∧ c # (f c)) → 
-  a # f → b # f → f a ≡ f b.
-Proof. 
-  intros ? ? [c []] ? ?. 
-  rewrite <-(fresh_fixpoint c a f) at 1; auto; try (apply support_fresh; assumption).
-  rewrite <-(fresh_fixpoint c b f) at 2; auto; try (apply support_fresh; assumption).
-  unfold action, fun_supp_act; simpl; rewrite <-!perm_inv, !name_action_right.
-  destruct (decide (c = a)), (decide (c = b)); subst; try rewrite perm_action_equal.
-  - reflexivity.
-  - rewrite fresh_fixpoint; [reflexivity | assumption | idtac].
-    apply fresh_fun_supp; auto; apply name_neq_fresh_iff, not_eq_sym; assumption.
-  - rewrite fresh_fixpoint; [reflexivity | assumption | idtac].
-    apply fresh_fun_supp; auto; apply name_neq_fresh_iff, not_eq_sym; assumption.
-  - rewrite !fresh_fixpoint; try reflexivity; try assumption;
-      apply fresh_fun_supp; auto; apply name_neq_fresh_iff, not_eq_sym; assumption.
-Qed.
-
-
 (* all this lemmas can be rewritten using a much more general lemma *)
 
 (* Lemma perm_distr_1 (a b w z: Name) (p: Perm):
@@ -483,10 +461,69 @@ Proof.
   - simpl in *; rewrite action_lam; do 2 f_equal; [apply perm_swap_subst_name | apply IHt]; set_solver.
 Qed. *)
 
+(* Definition FCB `{Nominal X, Nominal Y} (f: X →ₛ Y) :=
+  { a | a ∉ (support f) ∧ (∀ x: X, a # (f x)) }. *)
+
+Section FreshnessTheorem.
+  Context `{Nominal X} (h: Name →ₛ X).
+  
+  Definition freshF : X := h (fresh (support h)).
+
+  Lemma freshness_theorem_some_any :
+    (∃ a, a # h ∧ a # (h a)) ↔ (∀ a, a # h → a # (h a)).
+  Proof.
+    split; intros HH.
+    - intros a AH; destruct HH as [b [BH1 BH2]]; destruct (decide (a = b)).
+      + subst; assumption.
+      + apply (fresh_equivariant ⟨a,b⟩) in BH2; 
+        rewrite perm_swap_right,fun_equivar,perm_swap_right,fresh_fixpoint in BH2; assumption.
+    - new c fresh h; exists c; split.
+      + apply support_fresh; assumption.
+      + apply HH, support_fresh; assumption.
+  Qed.
+
+  Theorem freshness_theorem (Haf: ∃ a, a # h ∧ a # (h a)) :
+    ∀ a, a # h → (h a) ≡ freshF.
+  Proof.
+    intros a AH; unfold freshF; set (a' := fresh _); destruct (decide (a = a')); subst; try reflexivity.
+    rewrite <-(fresh_fixpoint a a' (h a')), fun_equivar,perm_swap_right,fresh_fixpoint.
+      + reflexivity.
+      + assumption.
+      + apply fresh_support_fresh.
+      + apply fresh_fun_supp; [| apply name_neq_fresh_iff]; assumption.
+      + apply freshness_theorem_some_any; [| apply fresh_support_fresh]; assumption.
+  Qed.
+
+End FreshnessTheorem.
+
 Section AlphaStructural.
   Context `{Nominal X} (L : NameSet).
-  Context (fvar : Name →ₛ X) (fapp : X →ₛ X →ₛ X) (flam : Name →ₛ X →ₛ X).
+  Context (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : (Name * X) →ₛ X).
   Context (fvarL : f_supp fvar ⊆ L) (fappL : f_supp fapp ⊆ L) (flamL : f_supp fvar ⊆ L).
+  Context (fcb : ∃ a, a ∉ L ∧ ∀ x, a # flam (a,x)).
+
+  Definition g_var (a: Name): Perm →ₛ X.
+    refine (λₛ⟦ L ∪ support a⟧ p : Perm, fvar (p•a)).
+  Proof.
+    - intros ? ? HH; rewrite HH; reflexivity.
+    - intros w z ? ? p;
+      unfold action at 3; unfold PermActionPerm;
+      rewrite <-2!gact_compat, <-perm_inv, (fresh_fixpoint _ _ a);
+        try (apply support_fresh; set_solver);
+        rewrite perm_inv at 2; rewrite <-fsupp_action, fresh_fixpoint;
+          try (apply support_fresh; set_solver); reflexivity.
+  Defined.
+
+  Definition g_app (Fm Fn: Perm →ₛ X): Perm →ₛ X.
+    refine (λₛ⟦ L ∪ support Fm ∪ support Fn⟧ p, fapp (Fm p, Fn p)).
+  Proof.
+    - intros ? ? HH; rewrite HH; reflexivity.
+    - intros w z ? ? p.
+      rewrite <-(fresh_fixpoint w z Fm) at 1; try (apply support_fresh; set_solver);
+      rewrite <-(fresh_fixpoint w z Fn) at 1; try (apply support_fresh; set_solver);
+      rewrite <-2!fun_equivar, <-prod_act; rewrite perm_inv at 2; rewrite <-fsupp_action;
+      rewrite fresh_fixpoint; try (apply support_fresh; set_solver); reflexivity.
+  Defined.
 
   (*(flam : [𝔸]X →ₛ X) *)
   (* {lamFCB : FCB flam}. *)
@@ -502,29 +539,6 @@ Section AlphaStructural.
       rewrite <-(fresh_fixpoint d w flam), fsupp_action, <-perm_inv, nabs_action, name_action_right;
       [apply Hd | |]; apply support_fresh; set_solver.
   Qed.
-
-  Definition g_var (a: Name): Perm →ₛ X.
-    refine (λₛ⟦ support fvar ∪ support a⟧ p : Perm, fvar (p • a)).
-  Proof.
-    - intros ? ? HH; rewrite HH; reflexivity.
-    - intros w z []%not_elem_of_union []%not_elem_of_union p;
-      unfold action at 3; unfold PermActionPerm;
-      rewrite <-2!gact_compat, <-perm_inv, (fresh_fixpoint _ _ a);
-        try (apply support_fresh; assumption);
-        rewrite perm_inv at 2; rewrite <-fsupp_action, fresh_fixpoint;
-          try (apply support_fresh; assumption); reflexivity.
-  Defined.
-
-  Definition g_app (Fm Fn: Perm →ₛ X): Perm →ₛ X.
-    refine (λₛ⟦ support fapp ∪ support Fm ∪ support Fn⟧ p, fapp (Fm p, Fn p)).
-  Proof.
-    - intros ? ? HH; rewrite HH; reflexivity.
-    - intros w z [[]%not_elem_of_union]%not_elem_of_union [[]%not_elem_of_union]%not_elem_of_union p.
-      rewrite <-(fresh_fixpoint w z Fm) at 1; try (apply support_fresh; assumption);
-      rewrite <-(fresh_fixpoint w z Fn) at 1; try (apply support_fresh; assumption);
-      rewrite <-2!fun_equivar, <-prod_act; rewrite perm_inv at 2; rewrite <-fsupp_action;
-      rewrite fresh_fixpoint; try (apply support_fresh; assumption); reflexivity.
-  Defined.
 
   Definition g_lam (a: Name) (m: Term) (Fm: Perm →ₛ X): Perm →ₛ X.
     refine (
