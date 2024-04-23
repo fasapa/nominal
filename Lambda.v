@@ -484,8 +484,9 @@ Proof.
 Qed. *)
 
 Section AlphaStructural.
-  Context `{Nominal X}
-    (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : [𝔸]X →ₛ X) {lamFCB : FCB flam}.
+  Context `{Nominal X} 
+  (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : [𝔸]X →ₛ X) 
+  {lamFCB : FCB flam}.
 
   Local Lemma ft_flam (Fm: Perm →ₛ X) a p (Sp: NameSet): 
     ∃ c : Name, (c ∉ Sp) ∧ c # flam [c](Fm (⟨ a, c ⟩ + p)).
@@ -658,8 +659,44 @@ Section AlphaStructural.
   Proof. unfold support at 1; simpl. *)
 
   Lemma support_alpha m: 
-    support (perm_alpha_rec m) ⊆ support fvar ∪ support fapp ∪ support flam ∪ atms m.
-  Proof. induction m; unfold support at 1; simpl; set_solver. Qed.
+    support (perm_alpha_rec m) ⊆ support fvar ∪ support fapp ∪ support flam ∪ fv m.
+  Proof. 
+    induction m; unfold support at 1; simpl.
+    - set_solver.
+    - set_solver.
+    - eapply subseteq_difference_r.
+      + admit.
+      + set_solvre.
+     set_solver. Qed.
+
+  Lemma alpha_rec_lam_exists_abs m:
+    ∃ L: NameSet, ∀ a, a ∉ L → alpha_rec (Lam a m) ≡ flam [a](alpha_rec m).
+  Proof. Admitted.
+    (* exists (support flam ∪ support m ∪ support (perm_alpha_rec m)); intros.
+    intros; unfold alpha_rec; simpl; unfold support at 1; simpl.
+    set (w := fresh _).
+    apply fsupp_equiv, name_abstraction_inv; right; split.
+    - apply alpha_class_inv; right; split.
+      + apply not_eq_sym; apply name_neq_fresh_iff, support_fresh; subst w.
+        eapply not_elem_of_weaken.
+        * eapply is_fresh.
+        * set_solver.
+      + apply fresh_fun_supp; apply support_fresh; subst w; eapply not_elem_of_weaken;
+        try eapply is_fresh; set_solver.
+    - rewrite alpha_rec_perm, fun_equivar, (fresh_fixpoint w a).
+      + rewrite (fresh_fixpoint a w).
+        * apply fsupp_equiv; unfold action, perm_action.
+          rewrite grp_left_id, grp_left_inv; reflexivity.
+        * apply support_fresh; set_solver.
+        * apply support_fresh. subst w;
+          eapply not_elem_of_weaken.
+          -- eapply is_fresh.
+          -- set_solver.
+      + apply support_fresh; subst w; eapply not_elem_of_weaken.
+        * eapply is_fresh.
+        * set_solver.
+      + apply support_fresh; set_solver.
+  Qed. *)
 
   Lemma alpha_rec_respectfull m n : 
     aeqCof m n → alpha_rec m ≡ alpha_rec n.
@@ -693,36 +730,7 @@ Section AlphaStructural.
     + eapply support_fresh, not_elem_of_weaken.
       * eauto.
       * apply support_alpha.
-Qed. *)
-
-  (* Lemma alpha_rec_lam_exists_abs m:
-    ∃ L: NameSet, ∀ a, a ∉ L → alpha_rec (Lam [a]m) ≡ flam [a](alpha_rec m).
-  Proof.
-    exists (support flam ∪ support m ∪ support (perm_alpha_rec m)); intros.
-    intros; unfold alpha_rec; simpl; unfold support at 1; simpl.
-    set (w := fresh _).
-    apply fsupp_equiv, name_abstraction_inv; right; split.
-    - apply alpha_class_inv; right; split.
-      + apply not_eq_sym; apply name_neq_fresh_iff, support_fresh; subst w.
-        eapply not_elem_of_weaken.
-        * eapply is_fresh.
-        * set_solver.
-      + apply fresh_fun_supp; apply support_fresh; subst w; eapply not_elem_of_weaken;
-        try eapply is_fresh; set_solver.
-    - rewrite alpha_rec_perm, fun_equivar, (fresh_fixpoint w a).
-      + rewrite (fresh_fixpoint a w).
-        * apply fsupp_equiv; unfold action, perm_action.
-          rewrite grp_left_id, grp_left_inv; reflexivity.
-        * apply support_fresh; set_solver.
-        * apply support_fresh. subst w;
-          eapply not_elem_of_weaken.
-          -- eapply is_fresh.
-          -- set_solver.
-      + apply support_fresh; subst w; eapply not_elem_of_weaken.
-        * eapply is_fresh.
-        * set_solver.
-      + apply support_fresh; set_solver.
-  Qed. *) 
+  Qed. *)
 
 (* Lemma perm_empty p : p • ɛ ≡@{Perm} ɛ.
 Proof. unfold action, perm_action; simpl. Admitted. *)
@@ -844,7 +852,7 @@ Section TermLength.
     match t with
     | Var a => 1
     | App m n => (term_length m) + (term_length n)
-    | Lam (a,m) => 1 + (term_length m)
+    | Lam a m => 1 + (term_length m)
     end.
 
   Definition length_fvar: Name →ₛ nat.
@@ -887,6 +895,9 @@ Section TermLength.
   Qed.
 
   Lemma term_lenght_respectfull: ∀ m n, m ≡ n → term_length m = term_length n.
+  Proof. Admitted. 
+
+  Lemma equal a b m: alpha_rec length_fvar length_fapp length_flam (lamFCB := length_flam_fcb) (⟨a,b⟩•m) = alpha_rec length_fvar length_fapp length_flam (lamFCB := length_flam_fcb) m.
   Proof. Admitted.
 
   Lemma length_equal:
@@ -896,10 +907,13 @@ Section TermLength.
     - repeat intro; inversion H; subst;
       erewrite alpha_rec_respectfull, term_lenght_respectfull; eauto; symmetry.
       + assumption.
-      + constructor; assumption.
+      + econstructor; eassumption.
     - intros; rewrite alpha_rec_var; simpl; reflexivity.
     - intros ? ? A B; rewrite alpha_rec_app; simpl in *; rewrite A, B; reflexivity.
-    - eexists; intros. simpl.
+    - pose proof (alpha_rec_lam_exists_abs length_fvar length_fapp length_flam (lamFCB := length_flam_fcb)).
+    exists ∅; intros. simpl.
+      pose proof alpha_rec_lam_exists_abs.
+
       pose proof (alpha_rec_lam length_fvar length_fapp length_flam (lamFCB := length_flam_fcb) a m).
       simpl in *. set (c := fresh _) in *.
       rewrite H1. f_equal.
