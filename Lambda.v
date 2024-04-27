@@ -184,7 +184,29 @@ Fixpoint fv (t: Term): NameSet :=
 
 Instance TermSupport : Support Term := fv.
 
-Instance TermNominal : Nominal Term. Admitted.
+Instance TermNominal : Nominal Term.
+Proof.
+  split.
+  - exact TermPermT.
+  - induction x; intros.
+    + rewrite term_perm_var, fresh_fixpoint; try apply support_fresh; set_solver.
+    + rewrite term_perm_app; constructor; set_solver.
+    + rewrite term_perm_abs; destruct (decide (a = b)); subst.
+      * apply AeqAbsC with (L := ∅); intros; rewrite !perm_action_equal; reflexivity.
+      * apply AeqAbsC with (L := support a ∪ support b ∪ support t ∪ support x); intros c ?;
+        unfold support,TermSupport in H,H0; simpl in *; apply not_elem_of_difference in H,H0; destruct H,H0.
+        destruct (decide (a = t)), (decide (b = t)); subst; try congruence.
+        -- rewrite name_action_left; rewrite 3IHx; set_solver.
+        -- rewrite name_action_right; rewrite !IHx; set_solver.
+        -- rewrite name_action_neither, (IHx a b); [reflexivity | | | |]; set_solver.
+        -- apply elem_of_singleton in H0; subst; 
+           rewrite name_action_right, perm_swap_distr, name_action_left, name_action_neither; [| set_solver | set_solver].
+           rewrite IHx, swap_perm; [reflexivity | |]; set_solver.
+        -- apply elem_of_singleton in H; subst.
+           rewrite name_action_left, perm_swap_distr, name_action_left, name_action_neither; [| set_solver | set_solver].
+           rewrite IHx; [reflexivity | |]; set_solver.
+        -- apply elem_of_singleton in H0,H; subst; congruence.
+Qed.
 
 (* Definition term_rect_general := fun (P : Term → Type)
   (fvar : ∀ a : Name, P (Var a))
