@@ -552,6 +552,77 @@ Proof.
   - simpl in *; rewrite action_lam; do 2 f_equal; [apply perm_swap_subst_name | apply IHt]; set_solver.
 Qed. *)
 
+
+Section InductionAlpha. (* COPELLO's *)
+
+Definition αCompat (P: Term → Prop) : Prop := ∀ m n, aeqCof m n → P m → P n.
+
+Lemma perm_ind:
+  ∀ P: Term → Prop, αCompat P →
+    (∀ t, P (Var t)) →
+    (∀ m n, P m → P n → P (App m n)) →
+    (∀ a m, (∀ p, P (p • m)) → P (Lam a m)) →
+    ∀ t, P t.
+Proof.
+  intros P Compat Hvar Happ Hlam t.
+  apply (Compat (ɛ • t) _ (gact_id t)). 
+  apply (@Term_ind (fun t => ∀ p, P (p • t))).
+    + intros; rewrite perm_var; apply Hvar.
+    + intros; rewrite perm_app; apply Happ; auto.
+    + intros; rewrite perm_lam; apply Hlam; intros.
+      eapply (Compat ((p + p0) • t1)). 
+      * rewrite gact_compat; reflexivity.
+      * apply H.
+Qed.
+
+Lemma aeq_lam_swap_notin (a b: Name) (t: Term) : 
+  b ∉ (fv (Lam a t)) → aeqCof (Lam a t) (Lam b (⟨a,b⟩•t)).
+Proof.
+  intros; simpl in *; apply not_elem_of_difference in H as [].
+  - apply AeqAbsC with (L := fv t ∪ support b ∪ support a); intros; destruct (decide (a = b)); subst.
+    + rewrite perm_swap_distr, perm_swap_left, term_action_equal; reflexivity.
+    + rewrite perm_swap_distr, perm_swap_left, perm_swap_neither; [| set_solver | set_solver].
+      apply term_perm_alpha. rewrite support_spec; set_solver.
+  - apply elem_of_singleton in H; subst; rewrite term_action_equal; reflexivity.
+Qed.
+
+Lemma lam_rename:
+  ∀ P: Term → Prop, αCompat P →
+    ∀ L : NameSet,
+      (∀ b m, b ∉ L → (∀ p, P (p • m)) → P (Lam b m)) →
+      ∀ a m, (∀ p, P (p • m)) → P (Lam a m).
+Proof.
+  intros P Compat L HLam a m Hp. set (c := fresh (support (Lam a m) ∪ L)).
+  apply (Compat (Lam c (⟨a,c⟩•m))).
+  - symmetry. apply aeq_lam_swap_notin. subst c; unfold support, TermSupport; simpl.
+    eapply not_elem_of_weaken; [eapply is_fresh | set_solver].
+  - apply HLam.
+    + subst c. eapply not_elem_of_weaken; [eapply is_fresh | set_solver].
+    + intros; eapply (Compat ((⟨a,c⟩ + p) • m)).
+      * rewrite gact_compat; reflexivity.
+      * apply Hp.
+Qed.
+
+Definition alpha_ind (L : NameSet) :
+  ∀ P: Term → Prop, αCompat P →
+    (∀ a, P (Var a)) →
+    (∀ m n, P m → P n → P (App m n)) →
+    (∀ a m, a ∉ L → P m → P (Lam a m)) →
+    ∀ m, P m.
+Proof.
+  intros P Compat Hvar Happ HLam.
+  apply perm_ind.
+  - apply Compat.
+  - apply Hvar.
+  - apply Happ.
+  - apply lam_rename with L; auto.
+    intros b m HbL HP; apply HLam.
+    + assumption.
+    + apply (Compat (ɛ • m)); [apply gact_id | apply HP].
+Qed.
+
+End InductionAlpha.
+
 Section RecursionAlpha.
   Context `{Nominal X} (L : NameSet).
   Context (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : [𝔸]X →ₛ X).
@@ -742,77 +813,6 @@ Section RecursionAlpha.
   Qed.
 
 End RecursionAlpha.
-
-Section InductionAlpha.
-
-Definition αCompat (P: Term → Prop) : Prop := ∀ m n, aeqCof m n → P m → P n.
-
-(* Lemma perm_var t p : p • Var t = Var (p • t).
-Proof. unfold action; simpl; reflexivity. Qed. *)
-
-Lemma perm_ind:
-  ∀ P: Term → Prop, αCompat P →
-    (∀ t, P (Var t)) →
-    (∀ m n, P m → P n → P (App m n)) →
-    (∀ a m, (∀ p, P (p • m)) → P (Lam a m)) →
-    ∀ t, P t.
-Proof.
-  intros P Compat Hvar Happ Hlam t.
-  apply (Compat (ɛ • t) _ (gact_id t)). 
-  apply (@Term_ind (fun t => ∀ p, P (p • t))).
-    + intros; rewrite perm_var; apply Hvar.
-    + intros; rewrite perm_app; apply Happ; auto.
-    + intros; rewrite perm_lam; apply Hlam; intros.
-      eapply (Compat ((p + p0) • t1)). 
-      * rewrite gact_compat; reflexivity.
-      * apply H.
-Qed.
-
-Lemma aeq_lam_swap_notin (a b: Name) (t: Term) : 
-  b ∉ (fv (Lam a t)) → aeqCof (Lam a t) (Lam b (⟨a,b⟩•t)).
-Proof.
-  intros; simpl in *; apply not_elem_of_difference in H as [].
-  - apply AeqAbsC with (L := fv t ∪ support b ∪ support a); intros; destruct (decide (a = b)); subst.
-    + rewrite perm_swap_distr, perm_swap_left, term_action_equal; reflexivity.
-    + rewrite perm_swap_distr, perm_swap_left, perm_swap_neither; [| set_solver | set_solver].
-      apply term_perm_alpha. rewrite support_spec; set_solver.
-  - apply elem_of_singleton in H; subst; rewrite term_action_equal; reflexivity.
-Qed.
-
-Lemma lam_rename:
-  ∀ P: Term → Prop, αCompat P →
-    ∀ L : NameSet,
-      (∀ b m, b ∉ L → (∀ p, P (p • m)) → P (Lam b m)) →
-      ∀ a m, (∀ p, P (p • m)) → P (Lam a m).
-Proof.
-  intros P Compat L HLam a m Hp. set (c := fresh (support (Lam a m) ∪ L)).
-  apply (Compat (Lam c (⟨a,c⟩•m))).
-  - symmetry. apply aeq_lam_swap_notin. subst c; unfold support, TermSupport; simpl.
-    eapply not_elem_of_weaken; [eapply is_fresh | set_solver].
-  - apply HLam.
-    + subst c. eapply not_elem_of_weaken; [eapply is_fresh | set_solver].
-    + intros; eapply (Compat ((⟨a,c⟩ + p) • m)).
-      * rewrite gact_compat; reflexivity.
-      * apply Hp.
-Qed.
-
-Definition alpha_ind (L : NameSet) :
-  ∀ P: Term → Prop, αCompat P →
-    (∀ a, P (Var a)) →
-    (∀ m n, P m → P n → P (App m n)) →
-    (∀ a m, a ∉ L → P m → P (Lam a m)) →
-    ∀ m, P m.
-Proof.
-  intros P Compat Hvar Happ HLam.
-  apply perm_ind.
-  - apply Compat.
-  - apply Hvar.
-  - apply Happ.
-  - apply lam_rename with L; auto.
-    intros b m HbL HP; apply HLam.
-    + assumption.
-    + apply (Compat (ɛ • m)); [apply gact_id | apply HP].
-Qed.
 
   (* Definition alpha_rec1 (p : Perm) : Term →ₛ X.
     refine (λₛ⟦ L ⟧ t, perm_alpha_rec t p).
