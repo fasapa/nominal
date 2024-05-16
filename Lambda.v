@@ -812,6 +812,24 @@ Section RecursionAlpha.
     - rewrite HH, alpha_rec_perm; reflexivity.
   Qed.
 
+  Theorem alpha_rec_support (a b : Name) (t : Term) :
+    a ∉ L → b ∉ L → ⟨a,b⟩•(alpha_rec (⟨a,b⟩•t)) ≡ alpha_rec t.
+  Proof.
+    intros; generalize t; apply (alpha_ind L).
+    - repeat intro.
+      pose proof (term_perm_alpha ⟨a,b⟩ _ _ H3).
+      pose proof (alpha_rec_respectfull _ _ H3).
+      pose proof (alpha_rec_respectfull _ _ H5).
+      assert (HH: ⟨ a, b ⟩ •(alpha_rec (⟨ a, b ⟩ • m)) ≡ ⟨ a, b ⟩ •(alpha_rec (⟨ a, b ⟩ • n))).
+      { apply perm_inj; assumption. }
+      symmetry in HH; etransitivity.
+      + eauto.
+      + etransitivity.
+        * eauto.
+        * assumption.
+    - intros; rewrite alpha_rec_var; apply support_spec.
+
+
 End RecursionAlpha.
 
   (* Definition alpha_rec1 (p : Perm) : Term →ₛ X.
