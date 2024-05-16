@@ -84,6 +84,24 @@ Proof.
   - rewrite term_perm_abs,!perm_equiv_neutral,IHt; reflexivity.
 Qed.
 
+Lemma term_action_inv (a b: Name) (t: Term) : 
+  ⟨a,b⟩•t = -⟨a,b⟩•t.
+Proof. Admitted.
+  (* induction t; intros.
+  - rewrite term_perm_var,perm_equiv_neutral; f_equal.
+  - rewrite term_perm_app,IHt1,IHt2; reflexivity.
+  - rewrite term_perm_abs,!perm_equiv_neutral,IHt; reflexivity.
+Qed. *)
+
+Lemma term_action_swap (a b: Name) (t: Term) : 
+  ⟨a,b⟩•t = ⟨b,a⟩•t.
+Proof. Admitted.
+  (* induction t; intros.
+  - rewrite term_perm_var,perm_equiv_neutral; f_equal.
+  - rewrite term_perm_app,IHt1,IHt2; reflexivity.
+  - rewrite term_perm_abs,!perm_equiv_neutral,IHt; reflexivity.
+Qed. *)
+
 End PermTerm.
 
 (* Inductive aeq: Term → Term → Prop :=
@@ -667,14 +685,14 @@ Section RecursionAlpha.
   Definition g_lam (a: Name) (m: Term) (Fm: Perm →ₛ X): Perm →ₛ X.
     refine (
       λₛ⟦ L ∪ support a ∪ support (Fm) ⟧ p,
-        let h: Name →ₛ X := λₛ⟦support flam ∪ support a ∪ support m ∪ support (Fm) ∪ support p⟧ a', 
+        let h: Name →ₛ X := λₛ⟦L ∪ support flam ∪ support a ∪ support m ∪ support (Fm) ∪ support p⟧ a', 
           (flam [a'](Fm (⟨a,a'⟩ + p))) in freshF h
     ).
     all: swap 1 2.
     - intros w z Hw Hz p; unfold freshF; cbn zeta.
       set (g := (λₛ⟦ _ ⟧ a' : Name, flam [a'](Fm (⟨ a, a' ⟩ + (⟨ w, z ⟩ • p))))).
       set (h := (λₛ⟦ _ ⟧ a' : Name, flam [a'](Fm (⟨ a, a' ⟩ + p)))).
-      destruct (exist_fresh (support flam ∪ support a ∪ support m ∪ support (Fm) ∪ support w ∪ support z ∪ support (⟨ w, z ⟩ • p) ∪ support p)) as [b Hb].
+      destruct (exist_fresh (L ∪ support flam ∪ support a ∪ support m ∪ support (Fm) ∪ support w ∪ support z ∪ support (⟨ w, z ⟩ • p) ∪ support p)) as [b Hb].
       rewrite (freshness_theorem2 g (fresh (support g)) b), (freshness_theorem2 h (fresh (support h)) b);
       try (apply fresh_support_fresh); try (apply support_fresh; subst h g; unfold support at 1; simpl; split_union; repeat (apply not_elem_of_union; split; try eauto)).
       all: swap 1 2. all: swap 2 3; try (subst; simpl; apply ft_flam).
@@ -693,7 +711,7 @@ Section RecursionAlpha.
       - intros x y Hxy; unfold freshF; cbn zeta; set (a' := fresh _); set (b' := fresh _);
         set (g := (λₛ⟦ _ ⟧ _ : Name, flam [_](Fm (⟨ a, _ ⟩ + x))));
         set (h := (λₛ⟦ _ ⟧ _' : Name, flam [_](Fm (⟨ a, _ ⟩ + y))));
-        destruct (exist_fresh (support flam ∪ support a ∪ support m ∪ support (Fm) ∪ support x ∪ support y ∪ support a' ∪ support b')) as [c Hc];
+        destruct (exist_fresh (L ∪ support flam ∪ support a ∪ support m ∪ support (Fm) ∪ support x ∪ support y ∪ support a' ∪ support b')) as [c Hc];
         rewrite (freshness_theorem2 g a' c), (freshness_theorem2 h b' c);
         try (apply fresh_support_fresh); try (apply support_fresh; subst h g; unfold support at 1; simpl; split_union; repeat (apply not_elem_of_union; split; try eauto));
         try (subst; simpl; apply ft_flam);
@@ -754,8 +772,8 @@ Section RecursionAlpha.
     - simpl; unfold g_app; unfold equiv, fun_supp_equiv; intro p; simpl.
       rewrite IHaeqCof1, IHaeqCof2; reflexivity.
     - simpl; unfold g_lam, equiv, fun_supp_equiv; intros p; simpl.
-      set (s1 := support flam ∪ support a ∪ support m ∪ support (perm_alpha_rec m) ∪ support p);
-      set (s2 := support flam ∪ support b ∪ support n ∪ support (perm_alpha_rec n) ∪ support p).
+      set (s1 := L ∪ support flam ∪ support a ∪ support m ∪ support (perm_alpha_rec m) ∪ support p);
+      set (s2 := L ∪ support flam ∪ support b ∪ support n ∪ support (perm_alpha_rec n) ∪ support p).
       set (h1 := (λₛ⟦ s1 ⟧ a' : Name, flam [a'](perm_alpha_rec m (⟨ a, a' ⟩ + p))));
       set (h2 := (λₛ⟦ s2 ⟧ a' : Name, flam [a'](perm_alpha_rec n (⟨ b, a' ⟩ + p)))).
       assert (HH1: flam [fresh (support h1)](perm_alpha_rec m (⟨ a, fresh (support h1) ⟩ + p)) = h1 (fresh (support h1))).
@@ -801,7 +819,7 @@ Section RecursionAlpha.
   Proof. set_solver. Qed.
 
   Lemma alpha_rec_lam a m:
-    let h := fresh (support flam ∪ support a ∪ support m ∪ support (perm_alpha_rec m)) in
+    let h := fresh (L ∪ support flam ∪ support a ∪ support m ∪ support (perm_alpha_rec m)) in
     alpha_rec (Lam a m) ≡ flam [h](alpha_rec (⟨a,h⟩•m)).
   Proof.
     intros; unfold alpha_rec; simpl; unfold support at 1; simpl.
@@ -812,10 +830,62 @@ Section RecursionAlpha.
     - rewrite HH, alpha_rec_perm; reflexivity.
   Qed.
 
-  Theorem alpha_rec_support (a b : Name) (t : Term) :
-    a ∉ L → b ∉ L → ⟨a,b⟩•(alpha_rec (⟨a,b⟩•t)) ≡ alpha_rec t.
+  Lemma alpha_rec_lam_fresh : forall a t, a ∉ L → alpha_rec (Lam a t) ≡ flam [a](alpha_rec t)
+  with alpha_rec_support : forall a b t, a ∉ L → b ∉ L → alpha_rec (⟨a,b⟩•t) ≡ ⟨a,b⟩ • alpha_rec t.
   Proof.
-    intros; generalize t; apply (alpha_ind L).
+    - intros; rewrite alpha_rec_lam; set (s := fresh _).
+      apply fsupp_equiv.
+      apply name_abstraction_inv; right; split.
+        + apply alpha_class_inv; right; split.
+          * admit.
+          * unfold alpha_rec; apply fresh_fun_supp.
+            -- apply support_fresh. admit.
+            -- apply support_fresh; unfold support,PermSupport; simpl; set_solver.
+        + rewrite term_action_swap; apply alpha_rec_support. admit. admit.
+    - intros; generalize dependent t; apply (alpha_ind (L ∪ support a ∪ support b)).
+      + repeat intro. 
+        pose proof (term_perm_alpha ⟨a,b⟩ _ _ H3).
+        pose proof (alpha_rec_respectfull _ _ H5); symmetry in H6.
+        etransitivity; eauto; etransitivity; eauto; 
+        apply perm_inj, alpha_rec_respectfull; assumption.
+      + intros; rewrite term_perm_var,!alpha_rec_var,fun_equivar,(support_spec fvar); [reflexivity | admit | admit].
+      + intros; rewrite term_perm_app,!alpha_rec_app,fun_equivar,prod_act,(support_spec fapp),H3,H4; [reflexivity | admit | admit].
+      + intros; rewrite term_perm_abs,perm_swap_neither,!alpha_rec_lam_fresh,
+          fun_equivar,nabs_action,perm_swap_neither,(support_spec flam).
+          * apply fsupp_equiv,name_abstraction_inv; left; split; auto. 
+  Admitted.
+
+  (* Definition alpha_rec_tmp : Term →ₛ X.
+    refine (λₛ⟦ L ⟧ t, perm_alpha_rec t ɛ).
+  Proof.
+    intros a b ? ?; apply (alpha_ind L).
+    - admit.
+    - admit.
+    - intros. rewrite term_perm_app, perm_alpha_rec_app.
+      simpl. rewrite fun_equivar.
+    
+    alpha_rec_app. fsupp_action.
+    
+    rewrite fun_equivar.
+      rewrite fsupp_action.
+
+    
+    
+    
+    
+    admit.
+    - intros; generalize dependent p; induction x as [| | c t].
+      + admit.
+      + admit.
+      + intros p. destruct (decide (a = b)); subst. admit.
+        destruct (decide (a = c)), (decide (b = c)); subst.
+        * rewrite !perm_action_equal; reflexivity.
+        *  *)
+
+  (* Theorem alpha_rec_support (a b : Name) :
+    a ∉ L → b ∉ L → ⟨a,b⟩•alpha_rec ≡ alpha_rec.
+  Proof.
+    unfold equiv,fun_equiv; intros ? ?; apply (alpha_ind L).
     - repeat intro.
       pose proof (term_perm_alpha ⟨a,b⟩ _ _ H3).
       pose proof (alpha_rec_respectfull _ _ H3).
@@ -827,8 +897,8 @@ Section RecursionAlpha.
       + etransitivity.
         * eauto.
         * assumption.
-    - intros; rewrite alpha_rec_var; apply support_spec.
-
+    - intros. rewrite rewrite fsupp_action. term_perm_var, !alpha_rec_var, <-fsupp_action, support_spec; set_solver.
+    - intros; rewrite term_perm_app. !alpha_rec_app. <-fsupp_action. *)
 
 End RecursionAlpha.
 
