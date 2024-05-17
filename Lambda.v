@@ -865,23 +865,180 @@ Section RecursionAlpha.
         + rewrite term_action_swap; apply H1; apply not_elem_of_union in HH as [[[[]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]; assumption.
   Qed.
 
-  Lemma aux1 a b : ⟨ a, b ⟩ • ⟨ a, b ⟩ ≡ ⟨ a, b ⟩. Proof. Admitted.
-  
+  Lemma aux1 a b : ⟨ a, b ⟩ • ⟨ a, b ⟩ = ⟨ a, b ⟩. Proof. Admitted.
+
+  Lemma perm_alpha_rec_support a b t : a ∉ L → a ∉ L → ⟨a,b⟩ • (perm_alpha_rec t) ≡ perm_alpha_rec t.
+  Proof. Admitted.
+
+  Lemma perm_empty: ∀ (a b : Name), ⟨a, b⟩ • ɛ ≡@{Perm} ɛ.
+  Proof. intros; unfold action,PermActionPerm; rewrite grp_left_id,grp_left_inv; reflexivity. Qed.
+
+  Lemma alpha_rec_lam_fresh_tmp t a : 
+    a ∉ L → alpha_rec (Lam a t) ≡ flam [a](alpha_rec t).
+  Proof.
+    assert (fcb_SomeAny: ∀ a : Name, (a ∉ L) → ∀ x : X, a # flam [a]x). { admit. }
+    intros.
+    rewrite alpha_rec_lam; set (s := fresh _).
+    assert (HH : s ∉ L). { admit. }
+    pose proof (fcb_SomeAny a H1). pose proof (fcb_SomeAny s HH).
+    rewrite <-(fresh_fixpoint a s (flam [a](alpha_rec t))).
+    - rewrite fun_equivar,nabs_action,perm_swap_left.
+      assert (HH1: ⟨ a, s ⟩ • flam = flam). { admit. }
+      rewrite HH1; clear HH1; unfold alpha_rec. apply fsupp_equiv.
+      rewrite fun_equivar. apply name_abstraction_inv; left; split; auto.
+      assert (HHH: a ∉ support )
+    support_spec. 
+    - apply H2.
+    - apply fresh_fun_supp.
+      * admit.
+      * apply alpha_class_inv; right; split.
+        -- admit.
+        -- unfold alpha_rec. apply fresh_fun_supp.
+          ++ admit.
+          ++ admit.  
+
   Definition alpha_rec_tmp : Term →ₛ X.
     refine (λₛ⟦ L ⟧ t, perm_alpha_rec t ɛ).
   Proof.
-    intros; rewrite <-alpha_rec_perm, grp_right_id; generalize dependent x.
-    apply (alpha_ind (L ∪ support a ∪ support b)).
+    intros;
+    (* assert (αP : αCompat (fun (x : Term) => ∀ (a b : Name), a ∉ L → b ∉ L → ⟨ a, b ⟩ • perm_alpha_rec x ⟨ a, b ⟩ ≡ perm_alpha_rec x ɛ)).
+    { admit. } *)
+    rewrite <-alpha_rec_perm,grp_right_id; generalize dependent x;
+    (* intros; generalize a b H1 H2; clear H1 H2 a b; generalize dependent m. *)
+    apply (alpha_ind L).
     - admit.
     - admit.
-    - admit.
-    - intros c ? ? ?; rewrite perm_alpha_rec_lam, fun_equivar, aux1.
+    - admit. (* intros c m ? IHt a b ? ?. intros ? ? ? IHt t b ? a ?; clear H1 a0 m. *)
+    - intros d ? ? ?.
+      assert (fcb_SomeAny: ∀ a : Name, (a ∉ L) → ∀ x : X, a # flam [a]x). { admit. }
+    
       unfold action; unfold fun_supp_act.
       Opaque g_lam perm_alpha_rec.
       simpl; rewrite <-perm_inv, aux1.
       Transparent g_lam.
+      simpl. 
+      set (s  := L ∪ support flam ∪ support d ∪ support m ∪ support (perm_alpha_rec m) ∪ support ⟨ a, b ⟩).
+      set (s' := L ∪ support flam ∪ support d ∪ support m ∪ support (perm_alpha_rec m) ∪ support ɛ).
+      set (h1 := λₛ⟦ s ⟧ a' : Name, flam [a'](perm_alpha_rec m (⟨ d, a' ⟩ + ⟨ a, b ⟩))).
+      set (h2 := λₛ⟦ s' ⟧ a' : Name, flam [a'](perm_alpha_rec m (⟨ d, a' ⟩ + ɛ))).
+      assert (HH1: flam [fresh (support h1)](perm_alpha_rec m (⟨ d, fresh (support h1) ⟩ + ⟨ a, b ⟩)) = h1 (fresh (support h1))).
+      { subst h1 s; reflexivity. }
+      assert (HH2: flam [fresh (support h2)](perm_alpha_rec m (⟨ d, fresh (support h2) ⟩ + ɛ)) = h2 (fresh (support h2))).
+      { subst h2 s'; reflexivity. }
+      rewrite HH1,HH2; clear HH1 HH2.
+      destruct (exist_fresh (L ∪ support a ∪ support b ∪ support h2 ∪ support h1 ∪ support (perm_alpha_rec m ɛ))) as [w Hw].
+      rewrite (freshness_theorem2 h1 (fresh (support h1)) w), (freshness_theorem2 h2 (fresh (support h2)) w).
+      + subst h1 h2; simpl.
+        rewrite fun_equivar, nabs_action.
+        assert (HH1: ⟨ a, b ⟩ • flam = flam). { admit. }
+        assert (HH2: ⟨ a, b ⟩ • w = w). { admit. }
+        rewrite HH2,HH1; clear HH2 HH1.
+        apply fsupp_equiv.
+        destruct (exist_fresh (support w)) as [z Hz].
+        rewrite !(name_abstraction_rename w z).
+        * apply name_abstraction_inv.
+
+
+        name_abstraction_inv; left; split; auto.
+        rewrite !alpha_rec_perm.
+        destruct (exist_fresh (support w)) as [z Hz].
+
+        eapply (perm_inj _ _ ⟨d,z⟩).
+        rewrite perm_comm; [| admit | admit].
+        rewrite !(fun_equivar ⟨d,z⟩).
+        unfold action at 4; unfold PermActionPerm.
+        rewrite perm_empty,fsupp_action.
+        rewrite <-grp_right_id at 2.
+        rewrite alpha_rec_perm.
+        
+        
+        
+        perm_empty,fsupp_action.
+        unfold action at 4; unfold PermActionPerm.
+        rewrite alpha_rec_perm.
+
+        set (TEMP := ⟨ a, b ⟩ • perm_alpha_rec (⟨ d, w ⟩ • m) ⟨ a, b ⟩). 
+        destruct (exist_fresh (support w)) as [z Hz].
+        rewrite <-alpha_rec_perm. rewrite grp_right_id.
+        eapply (perm_inj _ _ ⟨d,z⟩).
+        rewrite !(fun_equivar ⟨d,z⟩).
+        
+        ,fsupp_action. perm_action_duplicate. alpha_rec_perm.
+        
+        rewrite !(fun_equivar ⟨d,z⟩), fsupp_action.
+        assert (HH: ∀ (a b : Name), ⟨a, b⟩ • ɛ ≡@{Perm} ɛ). { admit. }
+        rewrite !(fun_equivar ⟨d,z⟩), HH.
+        rewrite fsupp_action.
+        
+        
+        
+        unfold action at 4; unfold PermActionPerm.
+
+        assert (HH: perm_alpha_rec (⟨ d, w ⟩ • m) ɛ = perm_alpha_rec m ɛ).
+        {
+          destruct (exist_fresh (support w)) as [z Hz]. eapply (perm_inj _ _ ⟨d,z⟩).
+          
+        }
+        destruct (exist_fresh (support w)) as [z Hz].
+        apply (perm_inj _ _ ⟨d,z⟩).
+        rewrite gact_compat,perm_notin_dom_comm,<-gact_compat.
+        * rewrite !(fun_equivar ⟨d,z⟩), !fsupp_action, !fun_equivar.
+          rewrite fun_equivar.
+        * simpl. admit.
+        * simpl. admit.  
+        rewrite !fun_equivar.
+
+
+
+
+        assert (HH: [w](perm_alpha_rec m (⟨ d, w ⟩ + ɛ)) ≡ [d](perm_alpha_rec m ɛ)).
+        { 
+          symmetry; rewrite (name_abstraction_rename d w).
+          - apply name_abstraction_inv; left; split; auto.
+            rewrite fun_equivar, fsupp_action.
+            rewrite <-perm_inv. aux1.
+          - admit.   
+
+        }
+
+
+      + apply ft_flam.
+      + apply fresh_support_fresh.
+      + apply support_fresh; apply not_elem_of_union in Hw as [[]%not_elem_of_union]; assumption.
+      + apply ft_flam.
+      + apply fresh_support_fresh.
+      + apply support_fresh; apply not_elem_of_union in Hw as [[]%not_elem_of_union]; assumption. 
+
+
+
+      set (s := L ∪ support flam ∪ support d ∪ support m ∪ support (perm_alpha_rec m) ∪ support p).
+      set (s := fresh _); set (s' := fresh _).
       simpl; set (s := fresh _); set (s' := fresh _).
-      assert (HH: perm_alpha_rec m (⟨c,s⟩ + ⟨a,b⟩) ≡ perm_alpha_rec (⟨c,s⟩•m) ⟨a,b⟩). { apply alpha_rec_perm. }
+      rewrite fun_equivar, nabs_action.
+      assert (HH1: ⟨ a, b ⟩ • flam = flam). { admit. }
+      assert (HH2: ⟨ a, b ⟩ • s = s). { admit. }
+      rewrite HH1,HH2.
+      apply fsupp_equiv.
+      (* achar um novo nome d e fazer (d,s) e (d,s')*)
+
+
+
+      rewrite fun_equivar.
+
+
+
+      (* (-p') + (p + p') *)
+      assert (HH: ⟨ a, b ⟩ + ⟨ c, s ⟩ + ⟨ a, b ⟩ ≡ ⟨ c, s ⟩ + ⟨ a, b ⟩ + ⟨ a, b ⟩ ).
+      {  rewrite perm_notin_dom_comm. reflexivity. simpl. admit. admit. }
+      assert (HH2: ⟨ c, s ⟩ + ⟨ a, b ⟩ ≡ ⟨ c, s ⟩ + ⟨ a, b ⟩ + ⟨ a, b ⟩ ).
+      {   }
+      assert (HH1: ⟨ c, s ⟩ + ⟨ a, b ⟩ ≡ ⟨ a, b ⟩ + ⟨ c, s ⟩ + ⟨ a, b ⟩).
+      {
+        rewrite !perm_notin_dom_comm.
+        -  
+
+      }
+      
 
       rewrite alpha_rec_perm.
       pose proof (perm_notin_dom_comm c s ⟨a,b⟩).
