@@ -733,8 +733,6 @@ Section RecursionAlpha.
     | Lam a m => g_lam a m (perm_alpha_rec m)
     end.
 
-  Functional Scheme perm_alpha_rec_ind := Induction for perm_alpha_rec Sort Prop.
-  
   Lemma perm_alpha_rec_app (m n: Term):
     perm_alpha_rec (App m n) = g_app (perm_alpha_rec m) (perm_alpha_rec n).
   Proof. simpl; reflexivity. Qed.
@@ -830,19 +828,83 @@ Section RecursionAlpha.
     - rewrite HH, alpha_rec_perm; reflexivity.
   Qed.
 
-  Lemma magic: 
-  forall a t, a ∉ L → alpha_rec (Lam a t) ≡ flam [a](alpha_rec t)
-  <->
-  forall a b t, a ∉ L → b ∉ L → alpha_rec (⟨a,b⟩•t) ≡ ⟨a,b⟩ • alpha_rec t.
-  Proof. Admitted.
-
-  Lemma alpha_rec_lam_fresh : forall a t, a ∉ L → alpha_rec (Lam a t) ≡ flam [a](alpha_rec t).
+  Lemma endgame: 
+  (∀ a t, a ∉ L → alpha_rec (Lam a t) ≡ flam [a](alpha_rec t))
+  ↔
+  (∀ a b t, a ∉ L → b ∉ L → alpha_rec (⟨a,b⟩•t) ≡ ⟨a,b⟩ • alpha_rec t).
   Proof.
-    intros; generalize dependent t; apply (alpha_ind (L ∪ support a)).
+    split.
+    - intros; generalize dependent t; apply (alpha_ind (L ∪ support a ∪ support b)).
+      + repeat intro. 
+        pose proof (term_perm_alpha ⟨a,b⟩ _ _ H4).
+        pose proof (alpha_rec_respectfull _ _ H6); symmetry in H7.
+        etransitivity; eauto; etransitivity; eauto; 
+        apply perm_inj, alpha_rec_respectfull; assumption.
+      + intros; rewrite term_perm_var,!alpha_rec_var,fun_equivar,(support_spec fvar);
+        [reflexivity | |]; eapply not_elem_of_weaken; eauto.
+      + intros; rewrite term_perm_app,!alpha_rec_app,fun_equivar,prod_act,(support_spec fapp),H4,H5;
+        [reflexivity | |]; eapply not_elem_of_weaken; eauto.
+      + intros; rewrite term_perm_abs,perm_swap_neither,!H1,
+          fun_equivar,nabs_action,perm_swap_neither,(support_spec flam).
+          * apply fsupp_equiv,name_abstraction_inv; left; split; auto.
+          * eapply not_elem_of_weaken; eauto.
+          * eapply not_elem_of_weaken; eauto.
+          * apply not_elem_of_union in H4 as [[]%not_elem_of_union ?]; set_solver.
+          * apply not_elem_of_union in H4 as [[]%not_elem_of_union ?]; set_solver.
+          * apply not_elem_of_union in H4 as [[]%not_elem_of_union ?]; set_solver.
+          * apply not_elem_of_union in H4 as [[]%not_elem_of_union ?]; set_solver.
+          * apply not_elem_of_union in H4 as [[]%not_elem_of_union ?]; set_solver.
+          * apply not_elem_of_union in H4 as [[]%not_elem_of_union ?]; set_solver.
+    - intros; rewrite alpha_rec_lam; set (s := fresh _); apply fsupp_equiv.
+      apply name_abstraction_inv; right; assert (HH: s ∉ (L ∪ support flam ∪ support a ∪ support t ∪ support (perm_alpha_rec t))). { apply is_fresh. } split.
+        + apply alpha_class_inv; right; split.
+          * apply not_elem_of_union in HH as [[[]%not_elem_of_union ?]%not_elem_of_union ?]; set_solver.
+          * unfold alpha_rec; apply fresh_fun_supp.
+            -- apply support_fresh; apply not_elem_of_union in HH as [[[]%not_elem_of_union ?]%not_elem_of_union ?]; assumption.
+            -- apply support_fresh; unfold support,PermSupport; simpl; set_solver.
+        + rewrite term_action_swap; apply H1; apply not_elem_of_union in HH as [[[[]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]; assumption.
+  Qed.
+
+  Lemma aux1 a b : ⟨ a, b ⟩ • ⟨ a, b ⟩ ≡ ⟨ a, b ⟩. Proof. Admitted.
+  
+  Definition alpha_rec_tmp : Term →ₛ X.
+    refine (λₛ⟦ L ⟧ t, perm_alpha_rec t ɛ).
+  Proof.
+    intros; rewrite <-alpha_rec_perm, grp_right_id; generalize dependent x.
+    apply (alpha_ind (L ∪ support a ∪ support b)).
     - admit.
     - admit.
     - admit.
-    - intros; pose proof (magic a m). eapply H4 in H3.
+    - intros c ? ? ?; rewrite perm_alpha_rec_lam, fun_equivar, aux1.
+      unfold action; unfold fun_supp_act.
+      Opaque g_lam perm_alpha_rec.
+      simpl; rewrite <-perm_inv, aux1.
+      Transparent g_lam.
+      simpl; set (s := fresh _); set (s' := fresh _).
+      assert (HH: perm_alpha_rec m (⟨c,s⟩ + ⟨a,b⟩) ≡ perm_alpha_rec (⟨c,s⟩•m) ⟨a,b⟩). { apply alpha_rec_perm. }
+
+      rewrite alpha_rec_perm.
+      pose proof (perm_notin_dom_comm c s ⟨a,b⟩).
+      rewrite H5.
+      
+
+    
+    
+    generalize dependent x; apply (alpha_ind (L ∪ support a ∪ support b)).
+    - admit.
+    - admit.
+    - admit.
+    - intros; rewrite term_perm_abs,perm_swap_neither.
+      + simpl; set (s := fresh _); set (s' := fresh _).
+        assert (HH1: perm_alpha_rec m (⟨a0,s'⟩ + ɛ) ≡ perm_alpha_rec (⟨a0,s'⟩•m) ɛ). { apply alpha_rec_perm. }
+        assert (HH2: perm_alpha_rec (⟨a,b⟩•m) (⟨a0,s⟩ + ɛ) ≡ perm_alpha_rec (⟨a0,s⟩•(⟨a,b⟩•m)) ɛ). { apply alpha_rec_perm. }
+
+
+        rewrite <-alpha_rec_perm. 
+      + apply not_elem_of_union in H3 as [[]%not_elem_of_union ?]; set_solver.
+      + apply not_elem_of_union in H3 as [[]%not_elem_of_union ?]; set_solver. *)
+
+
 
   (* Lemma alpha_rec_lam_fresh : forall a t, a ∉ L → alpha_rec (Lam a t) ≡ flam [a](alpha_rec t)
   with alpha_rec_support : forall a b t, a ∉ L → b ∉ L → alpha_rec (⟨a,b⟩•t) ≡ ⟨a,b⟩ • alpha_rec t.
