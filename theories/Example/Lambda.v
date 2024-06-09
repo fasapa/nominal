@@ -893,7 +893,7 @@ Section RecursionAlpha.
 
 End RecursionAlpha.
 
-Section TermLength.
+(* Section TermLength.
 
   From Nominal Require Import Instances.Nat.
   
@@ -968,4 +968,4 @@ Section TermLength.
       rewrite H1. f_equal.
     rewrite alpha_rec_lam.
 
-End TermLength.
+End TermLength. *)

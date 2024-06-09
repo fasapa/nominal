@@ -24,3 +24,5 @@ theories/Alpha.v
 theories/NameAbstraction.v
 
 theories/Instances/SupportedFunctions.v
+
+theories/Example/Lambda.v
