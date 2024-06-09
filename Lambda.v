@@ -894,58 +894,8 @@ Section RecursionAlpha.
   Instance: Proper (aeqCof ==> equiv) (perm_alpha_rec).
   Proof. repeat intro; apply perm_alpha_rec_respectfull; assumption. Qed.
 
-  Definition alpha_rec (t: Term) := perm_alpha_rec t ɛ.
-
-  Lemma alpha_rec_respectfull m n : 
-    aeqCof m n → alpha_rec m ≡ alpha_rec n.
-  Proof. intros; unfold alpha_rec; apply perm_alpha_rec_respectfull; assumption. Qed.
-
-  Lemma alpha_rec_var a : 
-    alpha_rec (Var a) = fvar a.
-  Proof. unfold alpha_rec; simpl; rewrite gact_id; auto. Qed.
-
-  Instance: Proper (aeqCof ==> equiv) (alpha_rec).
-  Proof. repeat intro; apply alpha_rec_respectfull; assumption. Qed.
-  
-  Lemma alpha_rec_app (m n: Term):
-    alpha_rec (App m n) = fapp (alpha_rec m, alpha_rec n).
-  Proof. unfold alpha_rec; simpl; reflexivity. Qed.
-
   Lemma union_empty (A : NameSet) : A ≡ A ∪ ∅.
   Proof. set_solver. Qed.
-
-  Lemma alpha_rec_lam a m:
-    let h := fresh (L ∪ support flam ∪ support a ∪ support m ∪ support (perm_alpha_rec m)) in
-    alpha_rec (Lam a m) ≡ flam [h](alpha_rec (⟨a,h⟩•m)).
-  Proof.
-    intros; unfold alpha_rec; simpl; unfold support at 1; simpl.
-    set (b := fresh _).
-    assert (HH: h = b). { subst h b; unfold support; simpl; apply fresh_proper, union_empty. }
-    apply fsupp_equiv, name_abstraction_inv; left; split.
-    - auto. 
-    - rewrite HH, alpha_rec_perm; reflexivity.
-  Qed.
-
-  Lemma lala a b t: a ∉ (L ∪ support t) → b ∉ (L ∪ support t) → ⟨a,b⟩•(perm_alpha_rec t) ≡ perm_alpha_rec t.
-  Proof.
-    (* intros; generalize dependent t; apply (alpha_ind (L ∪ support a ∪ support b)); intros.
-    - admit. 
-    - rewrite perm_alpha_rec_var; unfold g_var,equiv,fun_supp_equiv; intros p; simpl.
-      rewrite <-(support_spec fvar a b),fun_equivar,perm_action_duplicate,<-perm_inv,(support_spec fvar).
-      apply fsupp_equiv. induction p.
-      + rewrite gact_id; unfold action at 3; unfold PermActionPerm; rewrite <-perm_inv.
-        pose proof grp_left_id; unfold neutral,perm_neutral in H3; rewrite H3; rewrite gact_compat. 
-      
-      rewrite perm_swap_distr.
-    rewrite <-perm_inv,fun_equivar,<-(support_spec fvar a b).
-      rewrite <-(support_spec fvar a b),<-fun_equivar,perm_action_duplicate, support_spec; auto.
-    - rewrite action_app; simpl.
-      rewrite fun_equivar,support_spec,prod_act,H3,H4; auto.
-    - rewrite action_lam; simpl; rewrite (support_spec a0).
-      + unfold g_lam_term. 
-      + apply not_elem_of_union in H3 as [[]%not_elem_of_union ?]; set_solver.
-      + apply not_elem_of_union in H3 as [[]%not_elem_of_union ?]; set_solver. *)
-  Admitted.
 
   Lemma notin_support_comp_perm (a: Name) (p q : Perm): a ∉ support (p + q) ↔ a ∉ support p ∧ a ∉ support q.
   Proof.
@@ -958,7 +908,10 @@ Section RecursionAlpha.
 
   Lemma notin_support_comp_swap (c a b: Name) : c ∉ support ⟨a,b⟩ ↔ c ∉ support a ∧ c ∉ support b.
   Proof.
-    split. Admitted.
+    split.
+    - intros H1; unfold support in H1; simpl in H1; split; set_solver.
+    - intros []; unfold support; simpl. set_solver.
+  Qed.
 
   Lemma SERA a b t : ∀ p, a ∉ (L ∪ support p) → b ∉ (L ∪ support p) → ⟨a,b⟩•(perm_alpha_rec (⟨a,b⟩•t)) p ≡ perm_alpha_rec t p.
   Proof.
@@ -972,7 +925,7 @@ Section RecursionAlpha.
       + set_solver.
       + set_solver.
       + set_solver.
-      + set_solver.    
+      + set_solver.
     - intros m n IHt1 IHt2. Opaque perm_alpha_rec. simpl in *. Transparent perm_alpha_rec.
       intros p ? ?. rewrite action_app,perm_alpha_rec_app. simpl.
       rewrite fun_equivar, support_spec, prod_act. apply fsupp_equiv. split; simpl; auto.
@@ -987,7 +940,7 @@ Section RecursionAlpha.
       unfold freshF.
       destruct (exist_fresh (support g ∪ support h ∪ support a ∪ support b)) as [w Hw].
       rewrite (freshness_theorem2 h (fresh (support h)) w), (freshness_theorem2 g (fresh (support g)) w).
-      + simpl. unfold alpha_rec in IHt. rewrite fun_equivar, support_spec, nabs_action, support_spec.
+      + simpl; rewrite fun_equivar, support_spec, nabs_action, support_spec.
         apply fsupp_equiv,nabs_inv. rewrite name_action_neither. apply IHt.
         * apply not_elem_of_union in aL as []; apply not_elem_of_union; split. assumption. apply notin_support_comp_perm. split.
           -- apply notin_support_comp_swap. split.
@@ -1013,12 +966,62 @@ Section RecursionAlpha.
       + apply not_elem_of_union in Hw as [[[]%not_elem_of_union ?]%not_elem_of_union ?]. apply support_fresh. set_solver.
   Qed.
 
-  Lemma lol_support m : support (perm_alpha_rec m) ⊆ (L ∪ fv m).
-    induction m; unfold support at 1; simpl.
-    - auto.
-    - admit.
-    - admit.
-  Admitted.
+  Lemma support_empty : support ɛ@{Perm} ≡ ∅.
+  Proof. unfold support; simpl; reflexivity. Qed.
+
+  Definition alpha_rec: Term →ₛ X. refine (λₛ⟦L⟧ t, perm_alpha_rec t ɛ).
+  Proof.
+    - repeat intro; apply perm_alpha_rec_respectfull; assumption.
+    - intros; apply SERA; rewrite support_empty; set_solver.
+  Defined.
+
+  Lemma alpha_rec_respectfull m n : 
+    aeqCof m n → alpha_rec m ≡ alpha_rec n.
+  Proof. intros; unfold alpha_rec; simpl; apply perm_alpha_rec_respectfull; assumption. Qed.
+
+  Lemma alpha_rec_var a : 
+    alpha_rec (Var a) = fvar a.
+  Proof. unfold alpha_rec; simpl; rewrite gact_id; auto. Qed.
+  
+  Lemma alpha_rec_app (m n: Term):
+    alpha_rec (App m n) = fapp (alpha_rec m, alpha_rec n).
+  Proof. unfold alpha_rec; simpl; reflexivity. Qed.
+
+  Lemma endgame: 
+    ∀ a t, a ∉ L → alpha_rec (Lam a t) ≡ flam [a](alpha_rec t).
+  Proof.
+    intros; unfold alpha_rec; simpl. set (s := fresh _); apply fsupp_equiv.
+    apply name_abstraction_inv; right; assert (HH: s ∉ (L ∪ support flam ∪ support a ∪ support t ∪ support (perm_alpha_rec t) ∪ support ɛ@{Perm})). { apply is_fresh. } split.
+      + apply alpha_class_inv; right; split.
+        * apply not_elem_of_union in HH as [[[[]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]; set_solver.
+        * apply fresh_fun_supp.
+          -- apply support_fresh; unfold support, fun_supp_support; simpl; apply not_elem_of_union in HH as [[[[]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]. assumption.
+          -- apply support_fresh; unfold support, fun_supp_support; simpl; apply not_elem_of_union in HH as [[[[]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]. assumption.
+      + rewrite alpha_rec_perm. assert (HHH: ∀ t, perm_alpha_rec t ɛ = alpha_rec t). { intros. reflexivity. }
+        rewrite !HHH, fun_equivar. rewrite (support_spec alpha_rec),swap_perm. reflexivity.
+        * unfold alpha_rec, support, fun_supp_support; simpl.
+          apply not_elem_of_union in HH as [[[[[]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]. assumption.
+        * unfold alpha_rec, support, fun_supp_support; simpl. assumption.
+  Qed.
+
+  Lemma SERAFINAL a b t : a ∉ L → b ∉ L → ⟨a,b⟩•(alpha_rec (⟨a,b⟩•t)) ≡ alpha_rec t.
+  Proof. intros; unfold alpha_rec; apply SERA; unfold support; simpl; set_solver. Qed.
+
+
+
+  Lemma endgame: 
+    ∀ a t, a ∉ L → alpha_rec (Lam a t) ≡ flam [a](alpha_rec t).
+  Proof.
+    intros; rewrite alpha_rec_lam; set (s := fresh _); apply fsupp_equiv.
+    apply name_abstraction_inv; right; assert (HH: s ∉ (L ∪ support flam ∪ support a ∪ support t ∪ support (perm_alpha_rec t))). { apply is_fresh. } split.
+      + apply alpha_class_inv; right; split.
+        * apply not_elem_of_union in HH as [[[]%not_elem_of_union ?]%not_elem_of_union ?]; set_solver.
+        * unfold alpha_rec; apply fresh_fun_supp.
+          -- apply support_fresh; apply not_elem_of_union in HH as [[[]%not_elem_of_union ?]%not_elem_of_union ?]; assumption.
+          -- apply support_fresh; unfold support,PermSupport; simpl; set_solver.
+      + rewrite term_action_swap; apply H1; apply not_elem_of_union in HH as [[[[]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]; assumption.
+  Qed.
+
 
   Lemma perm_empty: ∀ (a b : Name), ⟨a, b⟩ • ɛ ≡@{Perm} ɛ.
   Proof. intros; unfold action,PermActionPerm; rewrite grp_left_id,grp_left_inv; reflexivity. Qed.
