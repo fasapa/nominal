@@ -22,6 +22,9 @@ Proof.
     auto.
 Qed.
 
+Lemma union_empty (A : NameSet) : A ≡ A ∪ ∅.
+Proof. set_solver. Qed.
+
 (* Freshness properties for name *)
 Lemma name_fresh_neq1 (a b: Name): a # b → a ≠ b.
 Proof. 

@@ -1,7 +1,5 @@
 From Nominal Require Import Nominal Fresh Alpha NameAbstraction.
-From Nominal Require Import Instances.Name.
-
-Require Import FunInd.
+From Nominal.Instances Require Import SupportedFunctions Name Prod Perm.
 
 Inductive Term : Set :=
 | Var: Name → Term
@@ -411,8 +409,6 @@ Admitted. *)
         * econstructor; admit. (* a = a0 ∧ b ∉ fv t*)
         * econstructor; admit. a = a0 ∧ b = a0 *)
 
-From Nominal.Instances Require Import SupportedFunctions Name Prod Perm.
-
 Section FreshnessTheorem.
   Context `{Nominal X} (h: Name →ₛ X).
   
@@ -742,90 +738,12 @@ Section RecursionAlpha.
     ).
   Defined.
 
-  (* Definition g_lam_term (a: Name) (Fm: X): X.
-    refine (
-    let h: Name →ₛ X := λₛ⟦L ∪ support flam ∪ support a ∪ support (Fm)⟧ a', (flam [a'](⟨a,a'⟩•Fm)) in 
-    freshF h
-    ).
-  Proof.
-    intros w z ? ? b.
-    rewrite <-(fresh_fixpoint w z flam) at 2; try (apply support_fresh; set_solver).
-    rewrite fsupp_action, <-perm_inv, nabs_action. apply gact_proper, fsupp_equiv; auto.
-    apply nabs_inv; rewrite perm_swap_distr. rewrite perm_swap_neither at 1.
-    rewrite (support_spec Fm w z).
-    set_solver. set_solver. set_solver. set_solver. set_solver. 
-  Defined. *)
-
   Fixpoint perm_alpha_rec (t : Term) : Perm →ₛ X :=
   match t with
     | Var a => g_var a
     | App m n => g_app (perm_alpha_rec m) (perm_alpha_rec n)
     | Lam a m => g_lam a m (perm_alpha_rec m)
   end.
-
-  (* Fixpoint perm_alpha_rec (t : Term) : X.
-  refine(
-    match t with
-    | Var a => g_var_term a
-    | App m n => fapp (perm_alpha_rec m, perm_alpha_rec n)
-    | Lam a m => 
-    let h: Name →ₛ X := λₛ⟦L ∪ support flam ∪ support a ∪ support (perm_alpha_rec m)⟧ a', (flam [a'](perm_alpha_rec (⟨a,a'⟩•m))) in 
-    freshF h
-    end
-  ).
-  Proof.
-    intros w z ? ? b.
-    rewrite fun_equivar, (fresh_fixpoint w z flam),nabs_action; try (apply support_fresh; set_solver).
-    apply fsupp_equiv; rewrite perm_action_duplicate; apply nabs_inv.
-    rewrite fsupp_action, <-perm_inv, nabs_action. apply perm_inj,fsupp_equiv. auto.
-    apply nabs_inv.
-  Defined. *)
-
-  (* Fixpoint perm_alpha_rec (t : Term) : X.
-  refine(
-    match t with
-    | Var a => fvar a
-    | App m n => fapp (perm_alpha_rec m, perm_alpha_rec n)
-    | Lam a m => 
-    let h: Name →ₛ X := λₛ⟦L ∪ support flam ∪ support a ∪ support (perm_alpha_rec m)⟧ a', (flam [a'](perm_alpha_rec (⟨a,a'⟩•m))) in 
-    freshF h
-    end
-  ).
-  Proof.
-    intros w z ? ? b.
-    rewrite fun_equivar, (fresh_fixpoint w z flam),nabs_action; try (apply support_fresh; set_solver).
-    apply fsupp_equiv; rewrite perm_action_duplicate; apply nabs_inv.
-    rewrite fsupp_action, <-perm_inv, nabs_action. apply perm_inj,fsupp_equiv. auto.
-    apply nabs_inv.
-  Defined. *)
-
-  (* Lemma lala a b t: a ∉ L → b ∉ L → ⟨a,b⟩ • perm_alpha_rec (⟨a,b⟩ • t) ≡ perm_alpha_rec t.
-  Proof.
-    intros; generalize dependent t; apply (alpha_ind (L ∪ support a ∪ support b)); intros.
-    - admit. 
-    - rewrite action_var; simpl; unfold g_var; simpl.
-      rewrite <-(support_spec fvar a b),<-fun_equivar,perm_action_duplicate, support_spec; auto.
-    - rewrite action_app; simpl.
-      rewrite fun_equivar,support_spec,prod_act,H3,H4; auto.
-    - rewrite action_lam; simpl; rewrite (support_spec a0).
-      + unfold g_lam_term. 
-      + apply not_elem_of_union in H3 as [[]%not_elem_of_union ?]; set_solver.
-      + apply not_elem_of_union in H3 as [[]%not_elem_of_union ?]; set_solver. *)
-
-  (* Definition perm_alpha_rec: Term →ₛ X.
-    refine (λₛ⟦L⟧ t, fix rec t
-      match t with
-      | Var a => fvar a
-      | App m n => fapp (perm_alpha_rec m, perm_alpha_rec n)
-      | Lam a m => Lam a m
-      end
-    ).
-
-    match t with
-    | Var a => g_var a
-    | App m n => g_app (perm_alpha_rec m) (perm_alpha_rec n)
-    | Lam a m => g_lam a m (perm_alpha_rec m)
-    end. *)
 
   Lemma perm_alpha_rec_var a:
     perm_alpha_rec (Var a) = g_var a.
@@ -845,19 +763,6 @@ Section RecursionAlpha.
     induction t; intros.
     - simpl; rewrite gact_compat; reflexivity.
   Admitted.
-
-  (* Lemma support_perm_alpha_rec t: 
-    support (perm_alpha_rec t) ⊆ (L ∪ support t).
-  Proof.
-    induction t; unfold support in *; simpl. 
-    - unfold support,name_support; simpl; set_solver.
-    - unfold support,fun_supp_support in *; simpl in *.
-      repeat (apply union_subseteq; split).
-      + apply union_subseteq_l.
-      + eapply union_subseteq_l' in IHt1. admit.
-      + eapply union_subseteq_l' in IHt2. admit. 
-    - admit.
-  Admitted. *)
 
 (* perhaps can be made simpler *)
   Theorem perm_alpha_rec_respectfull (m n : Term) :
@@ -894,26 +799,8 @@ Section RecursionAlpha.
   Instance: Proper (aeqCof ==> equiv) (perm_alpha_rec).
   Proof. repeat intro; apply perm_alpha_rec_respectfull; assumption. Qed.
 
-  Lemma union_empty (A : NameSet) : A ≡ A ∪ ∅.
-  Proof. set_solver. Qed.
-
-  Lemma notin_support_comp_perm (a: Name) (p q : Perm): a ∉ support (p + q) ↔ a ∉ support p ∧ a ∉ support q.
-  Proof.
-    split.
-    - intros H1; unfold support,PermSupport,op,perm_operator in H1; rewrite perm_dom_concat in H1.
-      apply not_elem_of_union in H1; auto.
-    - intros H1; unfold support,PermSupport,op,perm_operator; rewrite perm_dom_concat;
-      apply not_elem_of_union; assumption.
-  Qed.
-
-  Lemma notin_support_comp_swap (c a b: Name) : c ∉ support ⟨a,b⟩ ↔ c ∉ support a ∧ c ∉ support b.
-  Proof.
-    split.
-    - intros H1; unfold support in H1; simpl in H1; split; set_solver.
-    - intros []; unfold support; simpl. set_solver.
-  Qed.
-
-  Lemma SERA a b t : ∀ p, a ∉ (L ∪ support p) → b ∉ (L ∪ support p) → ⟨a,b⟩•(perm_alpha_rec (⟨a,b⟩•t)) p ≡ perm_alpha_rec t p.
+  Lemma perm_alpha_rec_supported a b t :
+  ∀ p, a ∉ (L ∪ support p) → b ∉ (L ∪ support p) → ⟨a,b⟩•(perm_alpha_rec (⟨a,b⟩•t)) p ≡ perm_alpha_rec t p.
   Proof.
     set (P := fun t => ∀ p : Perm, a ∉ (L ∪ support p) → b ∉ (L ∪ support p) → ⟨ a, b ⟩ • perm_alpha_rec (⟨ a, b ⟩ • t) p ≡ perm_alpha_rec t p).
     apply (alpha_ind (L ∪ support a ∪ support b) P); subst P.
@@ -972,7 +859,7 @@ Section RecursionAlpha.
   Definition alpha_rec: Term →ₛ X. refine (λₛ⟦L⟧ t, perm_alpha_rec t ɛ).
   Proof.
     - repeat intro; apply perm_alpha_rec_respectfull; assumption.
-    - intros; apply SERA; rewrite support_empty; set_solver.
+    - intros; apply perm_alpha_rec_supported; rewrite support_empty; set_solver.
   Defined.
 
   Lemma alpha_rec_respectfull m n : 
