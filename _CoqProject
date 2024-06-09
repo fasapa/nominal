@@ -17,8 +17,12 @@ theories/Fresh.v
 
 theories/Instances/Name.v
 theories/Instances/Prod.v
+theories/Instances/Perm.v
+theories/Instances/Nat.v
 
 theories/Alpha.v
 theories/NameAbstraction.v
 
 theories/Instances/SupportedFunctions.v
+
+theories/Example/Lambda.v

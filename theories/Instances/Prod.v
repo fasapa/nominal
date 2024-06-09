@@ -31,6 +31,10 @@ Section ProdNominal.
     Qed. 
 End ProdNominal.
 
+Lemma prod_act `{PermT X, PermT Y} (p : Perm) (x: X) (y: Y):
+  p • (x,y) ≡ (p • x, p • y).
+Proof. auto. Qed.
+
 (* Freshness properties for prod *)
 From Nominal Require Import Instances.Name.
 (* TODO: find better place to put this *)
