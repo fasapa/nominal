@@ -639,6 +639,27 @@ End InductionAlpha.
 
 Section RecursionAlpha.
   Context `{Nominal X} (L : NameSet).
+  Context (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : @FunSupp (prod Name X) X prod_action prod_equiv _ _).
+  Context (fvarL : f_supp fvar ⊆ L) (fappL : f_supp fapp ⊆ L) (flamL : f_supp flam ⊆ L).
+  (* Context (fcb : ∃ a, a ∉ L ∧ ∀ x, a # flam [a]x). *)
+  Context (fcb1 : ∀ a, a ∉ support flam → ∀ x, a ∉ support (flam (a,x))).
+
+Definition flam_nabs : [𝔸]X →ₛ X.
+  refine (λₛ⟦support flam⟧ (ax: [𝔸]X), let b := fresh (support ax.1 ∪ support ax.2 ∪ support flam) in flam (b, ⟨b,ax.1⟩•ax.2)).
+Proof.
+  - repeat intro; destruct x as [[a x]]; destruct y as [[b y]]; simpl in *. 
+    set (c1 := fresh _); set (c2 := fresh _); apply name_abstraction_inv in H1 as [[] | []].
+    + subst; apply fsupp_equiv; assert (HH: c1 ≡ c2). { apply nameset_fresh_respect; rewrite H2; reflexivity. }
+      rewrite HH,H2; reflexivity.
+    + apply alpha_class_inv in H1 as [].
+      * subst; rewrite perm_action_equal in H2; apply fsupp_equiv; assert (HH: c1 ≡ c2). { apply nameset_fresh_respect; rewrite H2; reflexivity. }
+        rewrite H2,HH; reflexivity.
+      *   
+  - admit.
+Admitted. 
+    
+Lemma efs (a : Name) : a ∉ support flam1 → ∀ x, flam1 (a,x) ≡ f [a]x.
+Proof. Admitted.
   Context (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : [𝔸]X →ₛ X).
   Context (fvarL : f_supp fvar ⊆ L) (fappL : f_supp fapp ⊆ L) (flamL : f_supp flam ⊆ L).
   Context (fcb : ∃ a, a ∉ L ∧ ∀ x, a # flam [a]x).
