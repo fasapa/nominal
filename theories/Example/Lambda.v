@@ -642,19 +642,33 @@ Section RecursionAlpha.
   Context (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : @FunSupp (prod Name X) X prod_action prod_equiv _ _).
   Context (fvarL : f_supp fvar ⊆ L) (fappL : f_supp fapp ⊆ L) (flamL : f_supp flam ⊆ L).
   (* Context (fcb : ∃ a, a ∉ L ∧ ∀ x, a # flam [a]x). *)
-  Context (fcb1 : ∀ a, a ∉ support flam → ∀ x, a ∉ support (flam (a,x))).
+  Context (fcb : ∀ a, a ∉ support flam → ∀ x, a ∉ support (flam (a,x))).
+
+  Local Lemma alpha_flam_equiv a b (x y : X): 
+    a ∉ support flam → b ∉ support flam → (a,x) ≈α (b,y) → flam (a,x) ≡ flam (b, y).
+  Proof.
+    intros. 
+    destruct (exist_fresh (support a ∪ support b ∪ support x ∪ support y ∪ support flam ∪ support (flam (a,x)) ∪ support (flam (b,y)))) as [c ?].
+    apply not_elem_of_union in H4 as [[[[[[]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?].
+    rewrite <-(support_spec (flam (a,x)) c a), <-(support_spec (flam (b,y)) c b);
+    try (auto || apply fcb).
+    rewrite !fun_equivar, !(support_spec flam), !prod_act, !perm_swap_right; try (apply fsupp_equiv); try auto.
+    unfold equiv,prod_equiv,prod_relation; simpl; split.
+      + reflexivity.
+      + apply alpha_some_any in H3; apply H3; repeat split; apply support_fresh; auto.
+  Qed. 
 
 Definition flam_nabs : [𝔸]X →ₛ X.
   refine (λₛ⟦support flam⟧ (ax: [𝔸]X), let b := fresh (support ax.1 ∪ support ax.2 ∪ support flam) in flam (b, ⟨b,ax.1⟩•ax.2)).
 Proof.
   - repeat intro; destruct x as [[a x]]; destruct y as [[b y]]; simpl in *. 
-    set (c1 := fresh _); set (c2 := fresh _); apply name_abstraction_inv in H1 as [[] | []].
-    + subst; apply fsupp_equiv; assert (HH: c1 ≡ c2). { apply nameset_fresh_respect; rewrite H2; reflexivity. }
-      rewrite HH,H2; reflexivity.
-    + apply alpha_class_inv in H1 as [].
-      * subst; rewrite perm_action_equal in H2; apply fsupp_equiv; assert (HH: c1 ≡ c2). { apply nameset_fresh_respect; rewrite H2; reflexivity. }
-        rewrite H2,HH; reflexivity.
-      *   
+    set (c1 := fresh _); set (c2 := fresh _); apply alpha_flam_equiv.
+    + subst c1; eapply not_elem_of_weaken. eapply is_fresh. apply union_subseteq_r.
+    + subst c2; eapply not_elem_of_weaken. eapply is_fresh. apply union_subseteq_r.
+    + pose proof (@Equivalence_Transitive _ _ alpha_equivalence_e) as S; pose proof (@Equivalence_Symmetric _ _ alpha_equivalence_e) as S1.
+      etransitivity; symmetry. apply alpha_rename_swap, support_fresh. eapply not_elem_of_weaken. eapply is_fresh. apply union_subseteq_l',union_subseteq_r.
+      etransitivity; symmetry. apply alpha_rename_swap, support_fresh. eapply not_elem_of_weaken. eapply is_fresh. apply union_subseteq_l',union_subseteq_r.
+      apply H1. 
   - admit.
 Admitted. 
     
