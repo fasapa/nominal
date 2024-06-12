@@ -802,8 +802,24 @@ Context (fcb : ∀ a, a ∉ support flam → ∀ x, a ∉ support (flam (a,x))).
   Proof. 
     induction t; intros.
     - simpl; rewrite gact_compat; reflexivity.
-  Admitted.
-
+    - simpl; rewrite IHt1,IHt2; reflexivity.
+    - Opaque freshF. rewrite perm_lam; simpl.
+      set (f := λₛ⟦ _ ⟧ a' : Name, _flam [_](_)); set (g := λₛ⟦ _ ⟧ a' : Name, _flam [_](_)).
+      destruct (exist_fresh (support f ∪ support g ∪ support q)) as [w [[]%not_elem_of_union]%not_elem_of_union].
+      erewrite <-!(freshness_theorem _ _ w ); try (apply support_fresh; auto).
+      simpl; apply fsupp_equiv,nabs_inv.
+      rewrite grp_assoc,perm_comm_distr,(perm_notin_domain_id _ w),<-grp_assoc,IHt; try reflexivity.
+      auto. Unshelve.
+      + subst f; simpl. pose proof (ft_flam (perm_alpha_rec t0) t (q + p) (L ∪ support _flam ∪ support t ∪ support t0 ∪ support (perm_alpha_rec t0) ∪ support (q + p))) as [w' []]. 
+        exists w'. split.
+        * apply support_fresh; unfold support. simpl. auto.
+        * auto.
+      + subst g; simpl. pose proof (ft_flam (perm_alpha_rec (q • t0)) (q•t) p (L ∪ support _flam ∪ support (q • t) ∪ support (q • t0) ∪ support (perm_alpha_rec (q • t0)) ∪ support p)) as [w' []].
+        exists w'. split.
+        * apply support_fresh; unfold support; simpl; auto.
+        * auto.
+  Qed.
+  
 (* perhaps can be made simpler *)
   Theorem perm_alpha_rec_respectfull (m n : Term) :
     aeqCof m n → perm_alpha_rec m ≡ perm_alpha_rec n.
