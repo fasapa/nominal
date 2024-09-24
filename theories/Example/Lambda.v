@@ -1,26 +1,27 @@
-From Nominal Require Import Nominal Fresh Alpha NameAbstraction.
+From Coq Require Import Lists.List.
+From Nominal Require Import Nominal Fresh NameAbstraction.
 From Nominal.Instances Require Import SupportedFunctions Name Prod Perm.
 
-Inductive Term : Set :=
-| Var: Name → Term
-| App: Term → Term → Term
-| Lam: Name → Term → Term.
+Inductive Λ : Set :=
+| Var: Name → Λ
+| App: Λ → Λ → Λ
+| Lam: Name → Λ → Λ.
 
-Fixpoint atms (t: Term) : NameSet :=
+Fixpoint atms (t: Λ) : NameSet :=
   match t with
   | Var a => {[ a ]}
   | App t1 t2 => (atms t1) ∪ (atms t2)
   | Lam a t => {[ a ]} ∪ (atms t)
   end.
 
-Fixpoint term_action (p: Perm) (t: Term): Term :=
+Fixpoint term_action (p: Perm) (t: Λ): Λ :=
   match t with
   | Var a => Var (p • a)
   | App m n => App (term_action p m) (term_action p n)
   | Lam a m => Lam (p • a) (term_action p m)
   end.
 
-Instance TermAction: PermAction Term := term_action.
+Instance TermAction: PermAction Λ := term_action.
 
 Lemma term_perm_var p a : p • (Var a) = Var (p • a).
 Proof. unfold action; simpl; reflexivity. Qed.
@@ -45,7 +46,7 @@ Proof.
   - do 2 rewrite term_perm_abs; f_equal; auto.
 Qed.
 
-Lemma term_perm_id (t : Term): ɛ•t = t.
+Lemma term_perm_id (t : Λ): ɛ•t = t.
 Proof.
   induction t.
   - rewrite term_perm_var; auto.
@@ -53,7 +54,7 @@ Proof.
   - rewrite term_perm_abs; rewrite IHt; auto.
 Qed.
 
-Lemma term_perm_compat p q (t : Term): p•(q•t) = (q + p)•t.
+Lemma term_perm_compat p q (t : Λ): p•(q•t) = (q + p)•t.
 Proof.
   induction t.
   - repeat rewrite term_perm_var; f_equal; apply gact_compat.
@@ -61,10 +62,10 @@ Proof.
   - repeat rewrite term_perm_abs; f_equal; [apply gact_compat |]; auto.
 Qed. 
 
-Lemma term_perm_swap_distr a b (p : Perm) (x: Term) : p•⟨a,b⟩•x = ⟨p•a, p•b⟩•p•x.
+Lemma term_perm_swap_distr a b (p : Perm) (x: Λ) : p•⟨a,b⟩•x = ⟨p•a, p•b⟩•p•x.
 Proof. rewrite 2term_perm_compat; apply term_perm_proper; auto; apply perm_comm_distr. Qed.
 
-Lemma term_action_neither (a b: Name) (t: Term) : 
+Lemma term_action_neither (a b: Name) (t: Λ) : 
   a ∉ atms t → b ∉ atms t → ⟨a,b⟩•t = t.
 Proof.
   induction t; intros.
@@ -73,7 +74,7 @@ Proof.
   - rewrite term_perm_abs,name_action_neither,IHt; simpl in *; set_solver.
 Qed.
 
-Lemma term_action_equal (a : Name) (t: Term) : 
+Lemma term_action_equal (a : Name) (t: Λ) : 
   ⟨a,a⟩•t = t.
 Proof.
   induction t; intros.
@@ -82,48 +83,41 @@ Proof.
   - rewrite term_perm_abs,!perm_equiv_neutral,IHt; reflexivity.
 Qed.
 
-Lemma term_action_inv (a b: Name) (t: Term) : 
+Lemma term_action_inv (a b: Name) (t: Λ) : 
   ⟨a,b⟩•t = -⟨a,b⟩•t.
-Proof. Admitted.
-  (* induction t; intros.
-  - rewrite term_perm_var,perm_equiv_neutral; f_equal.
+Proof.
+  induction t; intros.
+  - rewrite !term_perm_var; f_equal.
   - rewrite term_perm_app,IHt1,IHt2; reflexivity.
-  - rewrite term_perm_abs,!perm_equiv_neutral,IHt; reflexivity.
-Qed. *)
+  - rewrite !term_perm_abs; f_equal.
+Qed.
 
-Lemma term_action_swap (a b: Name) (t: Term) : 
+Lemma term_action_swap (a b: Name) (t: Λ) : 
   ⟨a,b⟩•t = ⟨b,a⟩•t.
-Proof. Admitted.
-  (* induction t; intros.
-  - rewrite term_perm_var,perm_equiv_neutral; f_equal.
+Proof.
+  induction t; intros.
+  - rewrite !term_perm_var; f_equal; rewrite swap_perm; reflexivity.
   - rewrite term_perm_app,IHt1,IHt2; reflexivity.
-  - rewrite term_perm_abs,!perm_equiv_neutral,IHt; reflexivity.
-Qed. *)
+  - rewrite !term_perm_abs; f_equal; [rewrite swap_perm |]; auto.
+Qed.
 
 End PermTerm.
 
-(* Inductive aeq: Term → Term → Prop :=
+(* Inductive aeq: Λ → Λ → Prop :=
 | AeqVar: ∀ a, aeq (Var a) (Var a)
 | AeqApp: ∀ m m' n n', aeq m m' → aeq n n' → aeq (App m n) (App m' n')
 | AeqAbs: ∀ a b m n, 
   (∀ c, c ≠ a → c ≠ b → c ∉ atms m → c ∉ atms n → 
     aeq (⟨a,c⟩•m) (⟨b,c⟩•n)) → aeq (Lam a m) (Lam b n). *)
 
-Inductive aeqCof: Term → Term → Prop :=
-| AeqVarC: ∀ a, aeqCof (Var a) (Var a)
-| AeqAppC: ∀ m m' n n', aeqCof m m' → aeqCof n n' → aeqCof (App m n) (App m' n')
-| AeqAbsC: ∀ (L : NameSet) a b m n, 
-  (∀ c, c ∉ L → aeqCof (⟨a,c⟩•m) (⟨b,c⟩•n)) → aeqCof (Lam a m) (Lam b n).
+Reserved Notation "a ≡α b" (at level 61).
+Inductive aeqCof: Λ → Λ → Prop :=
+| AeqVarC: ∀ a, (Var a) ≡α (Var a)
+| AeqAppC: ∀ m m' n n', m ≡α m' → n ≡α n' → (App m n) ≡α (App m' n')
+| AeqAbsC: ∀ (L : NameSet) a b m n, (∀ c, c ∉ L → (⟨a,c⟩•m) ≡α (⟨b,c⟩•n)) → (Lam a m) ≡α (Lam b n)
+where "a ≡α b" := (aeqCof a b).
 
-(* Lemma term_perm_alpha_ p m n: aeq m n → aeq (p • m) (p • n).
-Proof. 
-  induction 1.
-  - rewrite term_perm_var; constructor.
-  - repeat rewrite term_perm_app; constructor; auto.
-  - repeat rewrite term_perm_abs; constructor; intros. *)
-
-
-Lemma term_perm_alpha p m n: aeqCof m n → aeqCof (p • m) (p • n).
+Lemma term_perm_alpha p m n: m ≡α n → (p • m) ≡α (p • n).
 Proof. 
   induction 1.
   - rewrite term_perm_var; constructor.
@@ -134,28 +128,32 @@ Proof.
       do 2 rewrite <-term_perm_swap_distr; apply H0; set_solver.
 Qed.
 
-(* Theorem aeqs_equal m n: aeq m n <-> aeqCof m n.
+(* Lemma term_perm_alpha_ a b m n: aeq m n → aeq (⟨a,b⟩•m) (⟨a,b⟩•n).
+Proof. Admitted.
+
+Theorem aeqs_equal m n: aeq m n ↔ m ≡α n.
 Proof.
-  split; induction 1.
-  - constructor.
-  - constructor; auto.
-  - apply AeqAbsC with (L := ({[a;b]} ∪ (atms m) ∪ (atms n))); intros c Hc;
-    apply H0; set_solver.
-  - constructor.
-  - constructor; auto.
-  - constructor; intros; destruct (exist_fresh ({[a;b;c]} ∪ (atms m) ∪ (atms n) ∪ L)) as [d Hd].
-    assert (HH: d ∉ L). { set_solver. } specialize (H0 d HH).
-    apply (term_perm_alpha_ (⟨c,d⟩)) in H0. 
-    rewrite 2(term_perm_swap_distr _ _ ⟨c,d⟩) in H0.
-    rewrite name_action_right in H0.
-    rewrite 2name_action_neither in H0; [| set_solver | set_solver | set_solver | set_solver].
-    assert (HH2 : ⟨ c, d ⟩ • m = m). { apply term_action_neither; set_solver. }
-    assert (HH3 : ⟨ c, d ⟩ • n = n). { apply term_action_neither; set_solver. }
-    rewrite HH2,HH3 in H0; auto.
+  split; intros H.
+  - induction H.
+    + constructor.
+    + constructor; auto. 
+    + apply AeqAbsC with (L := ({[a;b]} ∪ (atms m) ∪ (atms n))); intros c Hc.
+      apply H0; set_solver.
+  - induction H.
+    + constructor.
+    + constructor; auto.
+    + constructor; intros. destruct (exist_fresh ({[a;b;c]} ∪ (atms m) ∪ (atms n) ∪ L)) as [d Hd].
+      assert (HH: d ∉ L). { set_solver. } specialize (H0 d HH). Admitted.
+      (* apply term_perm_alpha_ with (p := ⟨c,d⟩) in H0.
+      rewrite 2(term_perm_swap_distr _ _ ⟨c,d⟩) in H0.
+      rewrite name_action_right in H0.
+      rewrite 2name_action_neither in H0; [| set_solver | set_solver | set_solver | set_solver].
+      assert (HH2 : ⟨ c, d ⟩ • m = m). { apply term_action_neither; set_solver. }
+      assert (HH3 : ⟨ c, d ⟩ • n = n). { apply term_action_neither; set_solver. }
+      rewrite HH2,HH3 in H0; auto. *)
 Qed. *)
     
 Instance AeqCofRef: Reflexive aeqCof.
-
 Proof.
   intros t; induction t.
   - constructor.
@@ -183,9 +181,9 @@ Qed.
 Instance AeqCofEquiv : Equivalence aeqCof.
 Proof. split; typeclasses eauto. Qed.
 
-Instance TermEquiv : Equiv Term := aeqCof.
+Instance TermEquiv : Equiv Λ := aeqCof.
 
-Instance TermPermT : PermT Term.
+Instance TermPermT : PermT Λ.
 Proof.
   split.
   - typeclasses eauto.
@@ -200,16 +198,16 @@ Proof.
   - intros; rewrite term_perm_compat; reflexivity.
 Qed. 
 
-Fixpoint fv (t: Term): NameSet :=
+Fixpoint fv (t: Λ): NameSet :=
   match t with
   | Var a => {[ a ]}
   | App m n => (fv m) ∪ (fv n)
   | Lam a m => (fv m) ∖ {[ a ]}
   end.
 
-Instance TermSupport : Support Term := fv.
+Instance TermSupport : Support Λ := fv.
 
-Instance TermNominal : Nominal Term.
+Instance TermNominal : Nominal Λ.
 Proof.
   split.
   - exact TermPermT.
@@ -566,13 +564,12 @@ Proof.
   - simpl in *; rewrite action_lam; do 2 f_equal; [apply perm_swap_subst_name | apply IHt]; set_solver.
 Qed. *)
 
-
 Section InductionAlpha. (* COPELLO's *)
 
-Definition αCompat (P: Term → Prop) : Prop := ∀ m n, aeqCof m n → P m → P n.
+Definition αCompat (P: Λ → Prop) : Prop := ∀ m n, aeqCof m n → P m → P n.
 
 Lemma perm_ind:
-  ∀ P: Term → Prop, αCompat P →
+  ∀ P: Λ → Prop, αCompat P →
     (∀ t, P (Var t)) →
     (∀ m n, P m → P n → P (App m n)) →
     (∀ a m, (∀ p, P (p • m)) → P (Lam a m)) →
@@ -580,17 +577,17 @@ Lemma perm_ind:
 Proof.
   intros P Compat Hvar Happ Hlam t.
   apply (Compat (ɛ • t) _ (gact_id t)). 
-  apply (@Term_ind (fun t => ∀ p, P (p • t))).
+  apply (@Λ_ind (fun t => ∀ p, P (p • t))).
     + intros; rewrite perm_var; apply Hvar.
     + intros; rewrite perm_app; apply Happ; auto.
-    + intros; rewrite perm_lam; apply Hlam; intros.
-      eapply (Compat ((p + p0) • t1)). 
+    + intros a m H p; rewrite perm_lam; apply Hlam; intros.
+      eapply (Compat ((p + p0) • m)). 
       * rewrite gact_compat; reflexivity.
       * apply H.
 Qed.
 
-Lemma aeq_lam_swap_notin (a b: Name) (t: Term) : 
-  b ∉ (fv (Lam a t)) → aeqCof (Lam a t) (Lam b (⟨a,b⟩•t)).
+Lemma aeq_lam_swap_notin (a b: Name) (t: Λ) : 
+  b ∉ fv (Lam a t) → Lam a t ≡α Lam b (⟨a,b⟩•t).
 Proof.
   intros; simpl in *; apply not_elem_of_difference in H as [].
   - apply AeqAbsC with (L := fv t ∪ support b ∪ support a); intros; destruct (decide (a = b)); subst.
@@ -601,7 +598,7 @@ Proof.
 Qed.
 
 Lemma lam_rename:
-  ∀ P: Term → Prop, αCompat P →
+  ∀ P: Λ → Prop, αCompat P →
     ∀ L : NameSet,
       (∀ b m, b ∉ L → (∀ p, P (p • m)) → P (Lam b m)) →
       ∀ a m, (∀ p, P (p • m)) → P (Lam a m).
@@ -617,8 +614,8 @@ Proof.
       * apply Hp.
 Qed.
 
-Definition alpha_ind (L : NameSet) :
-  ∀ P: Term → Prop, αCompat P →
+Definition alpha_ind (L: NameSet) :
+  ∀ P: Λ → Prop, αCompat P →
     (∀ a, P (Var a)) →
     (∀ m n, P m → P n → P (App m n)) →
     (∀ a m, a ∉ L → P m → P (Lam a m)) →
@@ -639,12 +636,12 @@ End InductionAlpha.
 
 Section RecursionAlpha.
 Context `{Nominal X} (L : NameSet).
-Context (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : @FunSupp (prod Name X) X prod_action prod_equiv _ _).
+Context (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : (Name * X) →ₛ X).
 Context (fvarL : f_supp fvar ⊆ L) (fappL : f_supp fapp ⊆ L) (flamL : f_supp flam ⊆ L).
-Context (fcb : ∀ a, a ∉ support flam → ∀ x, a ∉ support (flam (a,x))).
+Context (fcb1: ∃ a, a ∉ L ∧ ∀ x, a # flam (a,x)) (fcb2: ∀ a, a ∉ support flam → ∀ x, a ∉ support (flam (a,x))).
 
   Local Lemma alpha_flam_equiv a b (x y : X): 
-    a ∉ support flam → b ∉ support flam → (a,x) ≈α (b,y) → flam (a,x) ≡ flam (b, y).
+    a ∉ support flam → b ∉ support flam → ⟦a⟧x ≈α ⟦b⟧y → flam (a,x) ≡ flam (b, y).
   Proof.
     intros. 
     destruct (exist_fresh (support a ∪ support b ∪ support x ∪ support y ∪ support flam ∪ support (flam (a,x)) ∪ support (flam (b,y)))) as [c ?].
@@ -657,28 +654,90 @@ Context (fcb : ∀ a, a ∉ support flam → ∀ x, a ∉ support (flam (a,x))).
       + apply alpha_some_any in H3; apply H3; repeat split; apply support_fresh; auto.
   Qed.
 
-  Local Lemma lol a b c x : ⟨ a, b ⟩
-  • flam
-      (fresh (support (⟨ a, b ⟩ • c) ∪ support (⟨ a, b ⟩ • x) ∪ support flam),
-       ⟨ fresh (support (⟨ a, b ⟩ • c) ∪ support (⟨ a, b ⟩ • x) ∪ support flam),
-       ⟨ a, b ⟩ • c ⟩ • ⟨ a, b ⟩ • x)
+  (* Local Lemma lol a b c x : ⟨a,b⟩
+  • flam (fresh (support (⟨a,b⟩•c) ∪ support (⟨a,b⟩•x) ∪ support flam),
+         ⟨fresh (support (⟨a,b⟩•c) ∪ support (⟨a,b⟩•x) ∪ support flam), ⟨a,b⟩•c⟩ • ⟨a,b⟩•x)
   ≡ flam
       (fresh (support c ∪ support x ∪ support flam),
-       ⟨ fresh (support c ∪ support x ∪ support flam), c ⟩ • x).
-  Proof. Admitted.
+       ⟨fresh (support c ∪ support x ∪ support flam), c⟩ • x).
+  Proof. Admitted. *)
+
+  (* Local Lemma ft_flam (Fm: Perm →ₛ X) a p (Sp: NameSet): 
+    ∃ c : Name, (c ∉ Sp) ∧ c # flam [c](Fm (⟨a,c⟩ + p)).
+  Proof.
+    destruct (exist_fresh (Sp ∪ support flam)) as [w Hw]; exists w; split.
+    - set_solver.
+    - destruct fcb as [d [? Hd]].
+      specialize (Hd (⟨d,w⟩•(Fm (⟨a,w⟩ + p)))).
+      apply ((fresh_equivariant ⟨d,w⟩ _ _)) in Hd; rewrite perm_swap_left in Hd.
+      rewrite <-(fresh_fixpoint d w flam), fsupp_action, <-perm_inv, nabs_action, name_action_right;
+      [apply Hd | |]; apply support_fresh; set_solver.
+  Qed. *)
+
+  Lemma perm_swap_equal a b (x: X): ⟨a,b⟩ • x ≡ ⟨b,a⟩ • x.
+  Proof. rewrite swap_perm; reflexivity. Qed.
 
   Definition _flam : [𝔸]X →ₛ X.
-    refine (λₛ⟦support flam⟧ (ax: [𝔸]X), let b := fresh (support ax.1 ∪ support ax.2 ∪ support flam) in flam (b, ⟨b,ax.1⟩•ax.2)).
+    refine (
+      λₛ⟦support flam⟧ (ax: [𝔸]X), 
+        let h: Name →ₛ X := λₛ⟦support (ax.(name)) ∪ support (ax.(term)) ∪ support flam⟧ c, 
+        (flam (c, ⟨ax.(name),c⟩ • ax.(term))) in freshF h
+    ).
   Proof.
-    - repeat intro; destruct x as [[a x]]; destruct y as [[b y]]; simpl in *. 
-      set (c1 := fresh _); set (c2 := fresh _); apply alpha_flam_equiv.
-      + subst c1; eapply not_elem_of_weaken. eapply is_fresh. apply union_subseteq_r.
-      + subst c2; eapply not_elem_of_weaken. eapply is_fresh. apply union_subseteq_r.
-      + pose proof (@Equivalence_Transitive _ _ alpha_equivalence_e) as S; pose proof (@Equivalence_Symmetric _ _ alpha_equivalence_e) as S1.
-        etransitivity; symmetry. apply alpha_rename_swap, support_fresh. eapply not_elem_of_weaken. eapply is_fresh. apply union_subseteq_l',union_subseteq_r.
-        etransitivity; symmetry. apply alpha_rename_swap, support_fresh. eapply not_elem_of_weaken. eapply is_fresh. apply union_subseteq_l',union_subseteq_r.
-        apply H1.
-    - intros; destruct x as [[c x]]; simpl. apply lol.
+    all: swap 1 2.
+    - intros w z Hw Hz [a x]; unfold freshF.
+      set (g := (λₛ⟦_⟧ c : Name, flam (c, ⟨name (⟨w,z⟩ • ⟦a⟧x),c⟩ • term (⟨w,z⟩ • ⟦a⟧x)))).
+      set (h := (λₛ⟦_⟧ c : Name, flam (c, ⟨name ⟦a⟧x,c⟩ • term ⟦a⟧x))).
+      destruct (exist_fresh (L ∪ support flam ∪ support w ∪ support z ∪ support x ∪ support h ∪ support g)) as [c Hc].
+      rewrite (freshness_theorem2 g (fresh (support g)) c), (freshness_theorem2 h (fresh (support h)) c);
+      try (apply fresh_support_fresh); try (apply support_fresh; set_solver).
+      all: swap 1 2. all: swap 2 3.
+      simpl; destruct (exist_fresh (support h ∪ support flam)) as [k Hk]; exists k; split;
+      [set_solver | specialize (fcb2 k ltac:(set_solver)); apply support_fresh, fcb2].
+      simpl; destruct (exist_fresh (support g ∪ support flam)) as [k Hk]; exists k; split;
+      [set_solver | specialize (fcb2 k ltac:(set_solver)); apply support_fresh, fcb2].
+      subst g h; simpl.
+      rewrite fun_equivar, support_spec, !prod_act; auto.
+      assert (HH: ∀ (a b c : Name), perm_swap ⟨a,b⟩ c = ⟨a,b⟩ • c). { intros; unfold action, name_action; reflexivity. }
+      rewrite perm_swap_distr. rewrite (HH w z c), (HH w z (⟨w,z⟩ • a)).
+      rewrite !perm_action_duplicate, !(name_action_neither w z c). reflexivity. 
+      apply not_elem_of_union in Hc as [[[[[? ?]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?].
+      apply name_neq_fresh_iff, support_fresh; assumption.
+      apply not_elem_of_union in Hc as [[[[[? ?]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?].
+      apply name_neq_fresh_iff, support_fresh; assumption.
+    - intros x y Hxy; unfold freshF; cbn zeta; set (w := fresh _); set (z := fresh _).
+      set (g := (λₛ⟦ _ ⟧ c : Name, flam (c, ⟨name x,c⟩ • term x))).
+      set (h := (λₛ⟦ _ ⟧ c : Name, flam (c, ⟨name y,c⟩ • term y))).
+      destruct x as [a x]; destruct y as [b y].
+      destruct (exist_fresh (L ∪ support flam ∪ support w ∪ support z ∪ support h ∪ support g ∪ support x ∪ support y)) as [c Hc].
+      rewrite (freshness_theorem2 g w c), (freshness_theorem2 h z c);
+      try (apply fresh_support_fresh); try (apply support_fresh; set_solver).
+      all: swap 1 2. all: swap 2 3.
+      simpl; destruct (exist_fresh (support h ∪ support flam)) as [k Hk]; exists k; split;
+      [set_solver | specialize (fcb2 k ltac:(set_solver)); apply support_fresh, fcb2].
+      simpl; destruct (exist_fresh (support g ∪ support flam)) as [k Hk]; exists k; split;
+      [set_solver | specialize (fcb2 k ltac:(set_solver)); apply support_fresh, fcb2].
+       simpl. apply alpha_flam_equiv. set_solver. set_solver.
+      pose proof (@Equivalence_Transitive _ _ alpha_equivalence_e) as T; pose proof (@Equivalence_Symmetric _ _ alpha_equivalence_e) as S.
+      transitivity (⟦a⟧x). symmetry. apply alpha_rename, support_fresh. set_solver.
+      transitivity (⟦b⟧y). apply Hxy. apply alpha_rename, support_fresh. set_solver.
+    Unshelve.
+      + typeclasses eauto.
+      + typeclasses eauto.
+      + typeclasses eauto.
+      + assumption.
+      + typeclasses eauto.
+      + intros w z Hw Hz c.
+        rewrite <-(fresh_fixpoint w z flam) at 2;  try (apply support_fresh; set_solver).
+        rewrite fsupp_action, <-perm_inv, prod_act. apply gact_proper. reflexivity.
+        apply fsupp_equiv. unfold equiv,prod_equiv,prod_relation; simpl; split.
+        * reflexivity.
+        * assert (HH: ∀ (a b c : Name), perm_swap ⟨a,b⟩ c = ⟨a,b⟩ • c). { intros; unfold action, name_action; reflexivity. }
+          rewrite perm_swap_distr, (HH w z (name ax)), (HH w z c).
+          rewrite (name_action_neither w z (name ax)), (support_spec (term ax) w z).
+          reflexivity. set_solver. set_solver. 
+          symmetry. apply name_neq_fresh_iff, support_fresh. set_solver. 
+          symmetry. apply name_neq_fresh_iff, support_fresh. set_solver.
   Defined.
 
   Local Lemma flam_abs_eq_flam_support : support flam = support _flam.
