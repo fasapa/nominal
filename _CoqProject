@@ -22,5 +22,6 @@ theories/Instances/Perm.v
 theories/Instances/Nat.v
 
 theories/NameAbstraction.v
+theories/FreshnessTheorem.v
 
-# theories/Example/Lambda.v
+theories/Example/Lambda.v
