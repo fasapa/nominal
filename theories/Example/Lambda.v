@@ -1,6 +1,6 @@
 From Coq Require Import Lists.List.
-From Nominal Require Import Nominal Fresh NameAbstraction FreshnessTheorem.
-From Nominal.Instances Require Import SupportedFunctions Name Prod Perm.
+From Nominal Require Export Nominal Fresh NameAbstraction FreshnessTheorem.
+From Nominal.Instances Require Export SupportedFunctions Name Prod Perm.
 
 Inductive Λ : Set :=
 | Var: Name → Λ
@@ -328,7 +328,7 @@ Section RecursionAlpha.
 Context `{Nominal X} (L : NameSet).
 Context (fvar : Name →ₛ X) (fapp : (X * X) →ₛ X) (flam : (Name * X) →ₛ X).
 Context (fvarL : f_supp fvar ⊆ L) (fappL : f_supp fapp ⊆ L) (flamL : f_supp flam ⊆ L).
-Context (fcb: (∃ a, a # flam ∧ ∀ x, a # (flam (a,x)))).
+Context (fcb: (∃ a, a # flam ∧ ∀ x, a # flam (a,x))).
 
   Local Lemma fcb_some_any:
     (∀ a, a # flam → ∀ x, a # (flam (a,x))) ↔ (∃ a, a # flam ∧ ∀ x, a # (flam (a,x))).
@@ -344,7 +344,7 @@ Context (fcb: (∃ a, a # flam ∧ ∀ x, a # (flam (a,x)))).
                 fresh_fixpoint,perm_action_duplicate in H2w; assumption.
   Qed.
 
-  Local Lemma alpha_flam_equiv a b (x y : X): 
+  Local Lemma alpha_flam_equiv (a b: Name) (x y: X): 
     a # flam → b # flam → ⟦a⟧x ≈α ⟦b⟧y → flam (a,x) ≡ flam (b,y).
   Proof.
     intros. 
@@ -363,7 +363,7 @@ Context (fcb: (∃ a, a # flam ∧ ∀ x, a # (flam (a,x)))).
       + eapply fcb_some_any in fcb; eauto.
   Qed.
 
-  Lemma perm_swap_equal a b (x: X): ⟨a,b⟩ • x ≡ ⟨b,a⟩ • x.
+  Lemma perm_swap_equal (a b: Name) (x: X): ⟨a,b⟩ • x ≡ ⟨b,a⟩ • x.
   Proof. rewrite swap_perm; reflexivity. Qed.
 
   Definition _flam : [𝔸]X →ₛ X.
@@ -434,11 +434,11 @@ Context (fcb: (∃ a, a # flam ∧ ∀ x, a # (flam (a,x)))).
 
   Section _flamProperties.
 
-  Local Lemma flam_abs_eq_flam_support : support flam = support _flam.
+  Local Lemma flam_abs_eq_flam_support: support flam = support _flam.
   Proof. reflexivity. Qed.
 
   (* TODO: Better name *)
-  Local Lemma efs (a : Name) : a ∉ support flam → ∀ x, flam (a,x) ≡ _flam ⟦a⟧x.
+  Local Lemma efs (a: Name): a ∉ support flam → ∀ x: X, flam (a,x) ≡ _flam ⟦a⟧x.
   Proof. 
     intros. simpl. set (w := fresh _). apply alpha_flam_equiv.
     - apply support_fresh; assumption.
@@ -449,8 +449,8 @@ Context (fcb: (∃ a, a # flam ∧ ∀ x, a # (flam (a,x)))).
       apply is_fresh. set_solver.
   Qed.
 
-  Local Lemma ft_flam (Fm: Perm →ₛ X) a p (Sp: NameSet): 
-    ∃ c : Name, (c ∉ Sp) ∧ c # _flam ⟦c⟧(Fm (⟨a,c⟩ + p)).
+  Local Lemma ft_flam (Fm: Perm →ₛ X) (a: Name) (p: Perm) (Sp: NameSet): 
+    ∃ c: Name, (c ∉ Sp) ∧ c # _flam ⟦c⟧(Fm (⟨a,c⟩ + p)).
   Proof.
     destruct (exist_fresh (Sp ∪ support _flam)) as [w Hw]; exists w; split.
     - apply not_elem_of_union in Hw as []; assumption.
@@ -567,14 +567,14 @@ Context (fcb: (∃ a, a # flam ∧ ∀ x, a # (flam (a,x)))).
       ).
   Defined.
 
-  Fixpoint perm_alpha_rec (t: Λ) : Perm →ₛ X :=
+  Fixpoint perm_alpha_rec (t: Λ): Perm →ₛ X :=
   match t with
     | Var a => g_var a
     | App m n => g_app (perm_alpha_rec m) (perm_alpha_rec n)
     | Lam a m => g_lam a m (perm_alpha_rec m)
   end.
 
-  Lemma perm_alpha_rec_var a:
+  Lemma perm_alpha_rec_var (a: Name):
     perm_alpha_rec (Var a) = g_var a.
   Proof. simpl; reflexivity. Qed.
 
@@ -582,7 +582,7 @@ Context (fcb: (∃ a, a # flam ∧ ∀ x, a # (flam (a,x)))).
     perm_alpha_rec (App m n) = g_app (perm_alpha_rec m) (perm_alpha_rec n).
   Proof. simpl; reflexivity. Qed.
 
-  Lemma perm_alpha_rec_lam a (m: Λ):
+  Lemma perm_alpha_rec_lam (a: Name) (m: Λ):
     perm_alpha_rec (Lam a m) = g_lam a m (perm_alpha_rec m).
   Proof. simpl; reflexivity. Qed.
 
@@ -611,7 +611,7 @@ Context (fcb: (∃ a, a # flam ∧ ∀ x, a # (flam (a,x)))).
   Qed.
   
 (* perhaps can be made simpler *)
-  Theorem perm_alpha_rec_respectfull (m n: Λ) :
+  Theorem perm_alpha_rec_respectfull (m n: Λ):
     m ≡α n → perm_alpha_rec m ≡ perm_alpha_rec n.
   Proof.
     induction 1.
@@ -646,8 +646,8 @@ Context (fcb: (∃ a, a # flam ∧ ∀ x, a # (flam (a,x)))).
   Instance: Proper (aeqCof ==> equiv) (perm_alpha_rec).
   Proof. repeat intro; apply perm_alpha_rec_respectfull; assumption. Qed.
 
-  Lemma perm_alpha_rec_supported a b t :
-    ∀ p, a ∉ (L ∪ support p) → b ∉ (L ∪ support p) → ⟨a,b⟩•(perm_alpha_rec (⟨a,b⟩•t)) p ≡ perm_alpha_rec t p.
+  Lemma perm_alpha_rec_supported (a b: Name) (t: Λ):
+    ∀ p: Perm, a ∉ (L ∪ support p) → b ∉ (L ∪ support p) → ⟨a,b⟩•(perm_alpha_rec (⟨a,b⟩•t)) p ≡ perm_alpha_rec t p.
   Proof.
     set (P := fun t => ∀ p : Perm, a ∉ (L ∪ support p) → b ∉ (L ∪ support p) → ⟨ a, b ⟩ • perm_alpha_rec (⟨ a, b ⟩ • t) p ≡ perm_alpha_rec t p).
     apply (alpha_ind (L ∪ support a ∪ support b) P); subst P.
@@ -703,20 +703,17 @@ Context (fcb: (∃ a, a # flam ∧ ∀ x, a # (flam (a,x)))).
         [apply support_fresh; assumption | pose proof fcb_some_any as [? hh]; specialize (hh fcb); rewrite <-efs; [eapply hh; apply support_fresh; assumption | assumption]].
   Qed.
 
-  Lemma support_empty : support ɛ@{Perm} ≡ ∅.
-  Proof. unfold support; simpl; reflexivity. Qed.
-
   Definition alpha_rec: Λ →ₛ X. refine (λₛ⟦L⟧ t, perm_alpha_rec t ɛ).
   Proof.
     - repeat intro; apply perm_alpha_rec_respectfull; assumption.
     - intros; apply perm_alpha_rec_supported; rewrite support_empty; set_solver.
   Defined.
 
-  Lemma alpha_rec_respectfull m n : 
+  Lemma alpha_rec_respectfull (m n: Λ) : 
     m ≡α n → alpha_rec m ≡ alpha_rec n.
   Proof. intros; unfold alpha_rec; simpl; apply perm_alpha_rec_respectfull; assumption. Qed.
 
-  Lemma alpha_rec_var a : 
+  Lemma alpha_rec_var (a: Name) : 
     alpha_rec (Var a) = fvar a.
   Proof. unfold alpha_rec; simpl; rewrite gact_id; auto. Qed.
   
@@ -724,8 +721,8 @@ Context (fcb: (∃ a, a # flam ∧ ∀ x, a # (flam (a,x)))).
     alpha_rec (App m n) = fapp (alpha_rec m, alpha_rec n).
   Proof. unfold alpha_rec; simpl; reflexivity. Qed.
 
-  Lemma endgame: 
-    ∀ a t, a ∉ L → alpha_rec (Lam a t) ≡ flam (a, alpha_rec t).
+  Lemma alpha_rec_lam (a: Name) (t: Λ): 
+    a ∉ L → alpha_rec (Lam a t) ≡ flam (a, alpha_rec t).
   Proof.
     intros; unfold alpha_rec; simpl; rewrite efs; [| set_solver]; set (s := fresh _); apply fsupp_equiv.
     apply name_abstraction_inv; right; assert (HH: s ∉ (L ∪ support flam ∪ support a ∪ support t ∪ support (perm_alpha_rec t) ∪ support ɛ@{Perm})). { apply is_fresh. } split.
@@ -742,80 +739,3 @@ Context (fcb: (∃ a, a # flam ∧ ∀ x, a # (flam (a,x)))).
   Qed.
 
 End RecursionAlpha.
-
-(* Section TermLength.
-
-  From Nominal Require Import Instances.Nat.
-  
-  Fixpoint term_length (t: Term): nat :=
-    match t with
-    | Var a => 1
-    | App m n => (term_length m) + (term_length n)
-    | Lam a m => 1 + (term_length m)
-    end.
-
-  Definition length_fvar: Name →ₛ nat.
-  Proof. refine (λₛ⟦∅⟧ n, 1); intros; apply perm_nat. Defined.
-
-  Definition length_fapp: (nat * nat) →ₛ nat.
-  Proof. 
-    refine (λₛ⟦∅⟧ mn, ((fst mn) + (snd mn))%nat).
-    - intros [] [] [H1 H2]; simpl in *; rewrite H1,H2; reflexivity.
-    - intros ? ? ? ? []; simpl; rewrite !perm_nat; reflexivity.
-  Defined.
-
-  (* Instance: Reflexive (≈α). Proof. Admitted. *)
-  Instance: Proper (equiv ==> (≈α)) abs.
-  Proof. repeat intro; unfold equiv,name_abstraction_equiv in *;
-    destruct x as [[x n]]; destruct y as [[y m]]; assumption.
-  Qed.
-
-  Instance:  Proper (equiv ==> equiv) snd.
-  Proof. intros [] [] [? []]; simpl; rewrite !perm_nat in *; assumption. Qed.
-
-  Definition length_flam: [𝔸]nat →ₛ nat.
-  Proof.
-    refine (λₛ⟦∅⟧ (an: [𝔸]nat), (1 + (snd an))%nat).
-    - repeat intro. rewrite H; reflexivity.
-    - intros; rewrite !perm_nat; unfold action, name_abstraction_action; simpl; rewrite !perm_nat;
-      reflexivity.
-  Defined.
-
-  Lemma name_fresh_nat (a: Name) (n: nat): a # n. Proof. Admitted.
-
-  Lemma length_flam_fcb: FCB length_flam.
-  Proof.
-    unfold FCB; eexists; split.
-    - unfold support; simpl; apply not_elem_of_empty.
-    - intros; apply name_fresh_nat.
-  Unshelve.
-    (* we can use any name. Pick some default *)
-    exact Atom.default.
-  Qed.
-
-  Lemma term_lenght_respectfull: ∀ m n, m ≡ n → term_length m = term_length n.
-  Proof. Admitted. 
-
-  Lemma equal a b m: alpha_rec length_fvar length_fapp length_flam (lamFCB := length_flam_fcb) (⟨a,b⟩•m) = alpha_rec length_fvar length_fapp length_flam (lamFCB := length_flam_fcb) m.
-  Proof. Admitted.
-
-  Lemma length_equal:
-    ∀ t, term_length t = alpha_rec length_fvar length_fapp length_flam (lamFCB := length_flam_fcb) t.
-  Proof.
-    apply alpha_ind.
-    - repeat intro; inversion H; subst;
-      erewrite alpha_rec_respectfull, term_lenght_respectfull; eauto; symmetry.
-      + assumption.
-      + econstructor; eassumption.
-    - intros; rewrite alpha_rec_var; simpl; reflexivity.
-    - intros ? ? A B; rewrite alpha_rec_app; simpl in *; rewrite A, B; reflexivity.
-    - pose proof (alpha_rec_lam_exists_abs length_fvar length_fapp length_flam (lamFCB := length_flam_fcb)).
-    exists ∅; intros. simpl.
-      pose proof alpha_rec_lam_exists_abs.
-
-      pose proof (alpha_rec_lam length_fvar length_fapp length_flam (lamFCB := length_flam_fcb) a m).
-      simpl in *. set (c := fresh _) in *.
-      rewrite H1. f_equal.
-    rewrite alpha_rec_lam.
-
-End TermLength. *)
