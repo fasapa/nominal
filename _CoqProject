@@ -1,12 +1,15 @@
 -arg -w
 -arg all
 -arg -w
--arg -disj-pattern-notation
+-arg -disj-pattern-notation # TODO FIX
+-arg -w
+-arg -future-coercion-class-field # TODO FIX
+-arg -w
+-arg -summary-out-of-scope # TODO FIX
 
 -R theories/ Nominal
 
 theories/Prelude.v
-
 theories/Group.v
 theories/Name.v
 theories/Swap.v
@@ -15,14 +18,15 @@ theories/PermT.v
 theories/Nominal.v
 theories/Fresh.v
 
+theories/Instances/SupportedFunctions.v
 theories/Instances/Name.v
 theories/Instances/Prod.v
 theories/Instances/Perm.v
 theories/Instances/Nat.v
+theories/Instances/Bool.v
 
-theories/Alpha.v
 theories/NameAbstraction.v
-
-theories/Instances/SupportedFunctions.v
+theories/FreshnessTheorem.v
 
 theories/Example/Lambda.v
+theories/Example/Substitution.v

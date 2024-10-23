@@ -47,17 +47,20 @@ Proof.
 Qed.
 
 Lemma notin_support_comp_perm (a: Name) (p q : Perm): a ∉ support (p + q) ↔ a ∉ support p ∧ a ∉ support q.
-  Proof.
-    split.
-    - intros H1; unfold support,PermSupport,op,perm_operator in H1; rewrite perm_dom_concat in H1.
-      apply not_elem_of_union in H1; auto.
-    - intros H1; unfold support,PermSupport,op,perm_operator; rewrite perm_dom_concat;
-      apply not_elem_of_union; assumption.
-  Qed.
+Proof.
+  split.
+  - intros H1; unfold support,PermSupport,op,perm_operator in H1; rewrite perm_dom_concat in H1.
+    apply not_elem_of_union in H1; auto.
+  - intros H1; unfold support,PermSupport,op,perm_operator; rewrite perm_dom_concat;
+    apply not_elem_of_union; assumption.
+Qed.
 
-  Lemma notin_support_comp_swap (c a b: Name) : c ∉ support ⟨a,b⟩ ↔ c ∉ support a ∧ c ∉ support b.
-  Proof.
-    split.
-    - intros H1; unfold support in H1; simpl in H1; split; set_solver.
-    - intros []; unfold support; simpl. set_solver.
-  Qed.
+Lemma notin_support_comp_swap (c a b: Name) : c ∉ support ⟨a,b⟩ ↔ c ∉ support a ∧ c ∉ support b.
+Proof.
+  split.
+  - intros H1; unfold support in H1; simpl in H1; split; set_solver.
+  - intros []; unfold support; simpl. set_solver.
+Qed.
+
+Lemma support_empty: support ɛ@{Perm} ≡ ∅.
+Proof. unfold support; simpl; reflexivity. Qed.
