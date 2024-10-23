@@ -231,6 +231,15 @@ Proof.
         -- apply elem_of_singleton in H0,H; subst; congruence.
 Qed.
 
+Instance term_rewrite_var: Proper (eq ==> equiv) (Var).
+Proof. repeat intro; rewrite H; reflexivity. Qed.
+
+Instance term_rewrite_app: Proper (equiv ==> equiv ==> equiv) (App).
+Proof. repeat intro; apply AeqAppC; auto. Qed.
+
+Instance term_rewrite_lam: Proper (eq ==> equiv ==> equiv) (Lam).
+Proof. repeat intro; apply AeqAbsC with (L := ∅); intros; rewrite H; apply perm_inj; assumption. Qed.
+
 Tactic Notation "eabstract" tactic3(tac) :=
 let G := match goal with |- ?G => G end in
 let pf := constr:(ltac:(tac) : G) in
@@ -254,11 +263,89 @@ Proof. unfold action; simpl; reflexivity. Qed.
 Lemma perm_lam p a t: p • (Lam a t) = Lam (p•a) (p•t).
 Proof. unfold action; simpl; reflexivity. Qed.
 
+Lemma var_fresh (a b: Name): a # Var b → a ≠ b.
+Proof. 
+   intros; apply some_any_iff in H; unfold freshP_a in H; 
+   destruct (exist_fresh (support a ∪ support b ∪ support (Var b))) as [w Hw];
+   specialize (H w ltac:(set_solver)); destruct (decide (a = b)); subst.
+   - rewrite perm_var,perm_swap_left in H; inversion H; subst; set_solver.
+   - auto.
+Qed.
+
+Lemma app_fresh (a: Name) (m n: Λ): a # App m n → a # m ∧ a # n.
+Proof.
+   intros; apply some_any_iff in H; unfold freshP_a in H.
+   destruct (exist_fresh (support a ∪ support m ∪ support n ∪ support (App m n))) as [w Hw].
+   specialize (H w ltac:(set_solver)); rewrite perm_app in H; inversion H; subst; split;
+   exists w; split; set_solver.
+Qed.
+
+Lemma term_lam_alpha_equiv (a b: Name) (m n: Λ): 
+   Lam a m ≡ Lam b n ↔ ⟦a⟧m ≡ ⟦b⟧n.
+Proof.
+   split; intros.
+   - inversion H; subst; apply alpha_inv_iff; destruct (decide (a = b)); subst.
+      + left; split; auto; destruct (exist_fresh L) as [w Hw]; apply (perm_inj _ _ ⟨b,w⟩).
+        apply H1; assumption.
+      + right.
+        assert (HH: a#n). {
+            destruct (exist_fresh (support a ∪ support b ∪ support m ∪ support n ∪ L)) as [w [[[[]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union].
+            assert (HH1: ⟨w,b⟩•⟨w,b⟩•n ≡ n). { apply perm_action_duplicate; reflexivity. }
+            assert (HH2: ⟨w,b⟩•⟨w,a⟩•w = a). { rewrite perm_swap_left, perm_swap_neither; auto; apply not_eq_sym,name_neq_fresh_iff,support_fresh; assumption. }
+            rewrite <-HH1; specialize (H1 w ltac:(assumption)). rewrite (swap_perm b w) in H1.
+            rewrite <-HH2,<-H1. rewrite (swap_perm a w). do 2! apply fresh_equivariant; apply support_fresh; assumption.
+         }
+        split; [apply fresh_prod_iff; split |].
+        * apply support_fresh; set_solver.
+        * assumption.
+        * destruct (exist_fresh (support a ∪ support b ∪ support m ∪ support n ∪ L)) as [w [[[[]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union ?]%not_elem_of_union].
+           specialize (H1 w ltac:(assumption)); apply (perm_inj _ _ ⟨a,w⟩).
+           rewrite perm_swap_distr,perm_swap_left,(perm_swap_neither b a w),(fresh_fixpoint a w n),(swap_perm w b).
+           assumption.
+           assumption.
+           apply support_fresh; assumption.
+           set_solver.
+           set_solver.
+   - apply alpha_inv_iff in H as [[] | []]; subst.
+      + apply AeqAbsC with (L := ∅); intros; apply perm_inj; assumption.
+      + apply AeqAbsC with (L := support a ∪ support b ∪ support m ∪ support n); intros.
+        apply (perm_inj _ _ ⟨a,c⟩).
+        rewrite perm_action_duplicate,perm_swap_distr,perm_swap_neither,perm_swap_right,(fresh_fixpoint a c n),(swap_perm b a).
+        assumption.
+        apply fresh_prod_iff in H as []; assumption.
+        apply support_fresh; set_solver.
+        apply fresh_prod_iff in H as []. apply name_neq_fresh_iff in H. auto.
+        set_solver.
+Qed.
+
+Lemma lam_fresh (a b: Name) (m: Λ): b # Lam a m → a = b ∨ (a ≠ b ∧ b # m).
+Proof.
+   intros; destruct (decide (a = b)); subst.
+   - left; reflexivity.
+   - right; split; auto.
+     destruct (exist_fresh (support a ∪ support b ∪ support m ∪ support (Lam a m))) as [w Hw].
+     exists w; split.
+     + set_solver.
+     + apply some_any_iff in H; unfold freshP_a in H; specialize (H w ltac:(set_solver)).
+       rewrite perm_lam,perm_swap_neither in H.
+       * apply term_lam_alpha_equiv,alpha_inv_name_equiv_iff in H; assumption.
+       * assumption.
+       * set_solver.
+Qed.
+
+Lemma aeq_lam_swap_notin (a b: Name) (t: Λ) : 
+  b ∉ fv (Lam a t) → Lam a t ≡ Lam b (⟨a,b⟩•t).
+Proof.
+  intros; simpl in *; apply not_elem_of_difference in H as []; apply term_lam_alpha_equiv.
+  - apply alpha_rename,support_fresh; assumption.
+  - apply elem_of_singleton in H; subst; rewrite term_action_equal; reflexivity.
+Qed.  
+
 Section InductionAlpha. (* COPELLO's *)
 
-Definition αCompat (P: Λ → Prop) : Prop := ∀ m n, m ≡α n → P m → P n.
+Definition αCompat (P: Λ → Prop): Prop := ∀ m n, m ≡ n → P m → P n.
 
-Lemma perm_ind:
+Local Lemma perm_ind:
   ∀ P: Λ → Prop, αCompat P →
     (∀ t, P (Var t)) →
     (∀ m n, P m → P n → P (App m n)) →
@@ -266,7 +353,7 @@ Lemma perm_ind:
     ∀ t, P t.
 Proof.
   intros P Compat Hvar Happ Hlam t.
-  apply (Compat (ɛ • t) _ (gact_id t)). 
+  apply (Compat (ɛ • t) _ (gact_id t)).
   apply (@Λ_ind (fun t => ∀ p, P (p • t))).
     + intros; rewrite perm_var; apply Hvar.
     + intros; rewrite perm_app; apply Happ; auto.
@@ -276,24 +363,12 @@ Proof.
       * apply H.
 Qed.
 
-Lemma aeq_lam_swap_notin (a b: Name) (t: Λ) : 
-  b ∉ fv (Lam a t) → Lam a t ≡α Lam b (⟨a,b⟩•t).
-Proof.
-  intros; simpl in *; apply not_elem_of_difference in H as [].
-  - apply AeqAbsC with (L := fv t ∪ support b ∪ support a); intros; destruct (decide (a = b)); subst.
-    + rewrite perm_swap_distr, perm_swap_left, term_action_equal; reflexivity.
-    + rewrite perm_swap_distr, perm_swap_left, perm_swap_neither; [| set_solver | set_solver].
-      apply term_perm_alpha. rewrite support_spec; set_solver.
-  - apply elem_of_singleton in H; subst; rewrite term_action_equal; reflexivity.
-Qed.
-
-Lemma lam_rename:
+Local Lemma lam_rename (L: NameSet):
   ∀ P: Λ → Prop, αCompat P →
-    ∀ L : NameSet,
       (∀ b m, b ∉ L → (∀ p, P (p • m)) → P (Lam b m)) →
       ∀ a m, (∀ p, P (p • m)) → P (Lam a m).
 Proof.
-  intros P Compat L HLam a m Hp. set (c := fresh (support (Lam a m) ∪ L)).
+  intros P Compat HLam a m Hp. set (c := fresh (support (Lam a m) ∪ L)).
   apply (Compat (Lam c (⟨a,c⟩•m))).
   - symmetry. apply aeq_lam_swap_notin. subst c; unfold support, TermSupport; simpl.
     eapply not_elem_of_weaken; [eapply is_fresh | set_solver].
@@ -316,7 +391,7 @@ Proof.
   - apply Compat.
   - apply Hvar.
   - apply Happ.
-  - apply lam_rename with L; auto.
+  - apply (lam_rename L); auto.
     intros b m HbL HP; apply HLam.
     + assumption.
     + apply (Compat (ɛ • m)); [apply gact_id | apply HP].

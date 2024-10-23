@@ -92,7 +92,7 @@ Proof.
             rewrite (perm_expand _ w _), <-!gact_compat, (fresh_fixpoint a w y), <-wFx, swap_perm; intuition; subst.
             * symmetry; apply perm_action_duplicate.
             * eapply name_fresh_false; eauto. 
-        + split; [apply name_neq_fresh_iff; assumption |].
+        + simpl in *; split; [apply name_neq_fresh_iff; assumption |].
           cut (⟨w,b⟩ • ⟨w,b⟩ • y ≡ y); [intros HH1 | apply perm_action_duplicate].
           cut (⟨w,b⟩ • ⟨w,a⟩ • w = a); [intros HH2 | rewrite perm_swap_left, perm_swap_neither; auto; apply not_eq_sym, name_neq_fresh_iff; intuition].
           rewrite <-HH1,<-wFx; rewrite <-HH2 at 1; do 2 apply fresh_equivariant; intuition.
