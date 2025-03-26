@@ -16,7 +16,7 @@ Proof.
     split; intros; [apply bool_permT | unfold action,bool_action; reflexivity].
 Qed.
 
-Section Properties.
+(* Section Properties.
     Context `{Nominal X} (f: X →ₛ bool).
 
     Lemma lol: ∀ p x, (p•f) x = f (- p • x).
@@ -24,4 +24,4 @@ Section Properties.
         unfold action at 1; unfold bool_action. reflexivity.
     Qed.
     
-End Properties.
+End Properties. *)
