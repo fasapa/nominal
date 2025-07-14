@@ -6,6 +6,8 @@
 -arg -future-coercion-class-field # TODO FIX
 -arg -w
 -arg -summary-out-of-scope # TODO FIX
+-arg -w
+-arg -stdlib-vector # TODO FIX
 
 -R theories/ Nominal
 
@@ -21,7 +23,7 @@ theories/Fresh.v
 theories/Instances/SupportedFunctions.v
 theories/Instances/Name.v
 theories/Instances/Prod.v
-theories/Instances/Perm.v
+# theories/Instances/Perm.v
 theories/Instances/Nat.v
 theories/Instances/Bool.v
 
