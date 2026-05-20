@@ -7,16 +7,12 @@ Context `{Nominal X} (h: Name →ₛ X) (Hp: ∃ a, a # h ∧ a # (h a)).
   
 Definition freshF: X := h (fresh (support h)).
 
-Lemma freshness_theorem_some_any: (∃ a, a # h ∧ a # (h a)) ↔ (∀ a, a # h → a # (h a)).
+Lemma freshness_theorem_some_any: ∀ a, a # h → a # (h a).
 Proof.
-  split; intros HH.
-  - intros a AH; destruct HH as [b [BH1 BH2]]; destruct (decide (a = b)).
-    + subst; assumption.
-    + apply (fresh_equivariant ⟨a,b⟩) in BH2; 
-      rewrite perm_swap_right,fun_equivar,perm_swap_right,fresh_fixpoint in BH2; assumption.
-  - new c fresh h; exists c; split.
-    + apply support_fresh; assumption.
-    + apply HH, support_fresh; assumption.
+  intros a AH; destruct Hp as [b [BH1 BH2]]; destruct (decide (a = b)).
+  - subst; assumption.
+  - apply (fresh_equivariant ⟨a,b⟩) in BH2;
+    rewrite perm_swap_right,fun_equivar,perm_swap_right,fresh_fixpoint in BH2; assumption.
 Qed.
 
 Theorem freshness_theorem: ∀ a, a # h → (h a) ≡ freshF.
@@ -27,7 +23,7 @@ Proof.
     + assumption.
     + apply fresh_support_fresh.
     + apply fresh_fun_supp; [| apply name_neq_fresh_iff]; assumption.
-    + apply freshness_theorem_some_any; [| apply fresh_support_fresh]; apply Hp.
+    + apply freshness_theorem_some_any; apply fresh_support_fresh.
 Qed.
 
 Corollary freshness_theorem_inj: ∀ a b, a # h → b # h → h a ≡ h b.
