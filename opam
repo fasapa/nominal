@@ -1,0 +1,22 @@
+opam-version: "2.0"
+maintainer: "fabricio@nethermind.io"
+homepage: "https://github.com/fasapa/nominal"
+dev-repo: "git+https://github.com/fasapa/nominal"
+bug-reports: "https://github.com/fasapa/nominal/issues"
+license: "MIT"
+build: [
+  [make "-j%{jobs}%"]
+]
+install: [make "install"]
+depends: [
+  "rocq-core" { (>= "9.2" & < "9.3~") | (= "dev") }
+  "rocq-stdlib"
+  "rocq-stdpp"
+]
+tags: [
+]
+authors: [
+  "Fabrício Sanches Paranhos <fabricio@nethermind.io>"
+  "Daniel Ventura <ventura@ufg.br>"
+]
+synopsis: "Nominal Sets in Rocq"
