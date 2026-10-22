@@ -3,7 +3,7 @@ From Nominal Require Export Prelude.
 (** *Group operations *)
 Class Neutral A := neutral: A.
 #[export] Hint Mode Neutral ! : typeclass_instances.
-Notation ɛ := neutral.
+Abbreviation ɛ := neutral.
 Notation "ɛ@{ A }" := (@neutral A _) (only parsing): nominal_scope.
 
 Class Operator A := op: A → A → A.

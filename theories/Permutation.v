@@ -3,7 +3,7 @@ From Nominal Require Export Group Swap.
 Open Scope nominal_scope.
 
 (* Permutation is just a list of pair of names. *)
-Notation Perm := (list Swap).
+Abbreviation Perm := (list Swap).
 
 Definition perm_swap (p: Perm): Name → Name := 
   λ a, foldl (λ x y, swap y x) a p.
