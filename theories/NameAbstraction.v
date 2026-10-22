@@ -1,4 +1,4 @@
-From Coq Require Import Classes.RelationClasses.
+From Stdlib Require Import Classes.RelationClasses.
 From Nominal Require Export Nominal Fresh.
 From Nominal.Instances Require Import Name Prod Perm.
 

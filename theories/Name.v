@@ -1,5 +1,5 @@
 From Nominal Require Export Prelude.
-From Coq Require Import Arith.Peano_dec.
+From Stdlib Require Import Arith.Peano_dec.
 From stdpp Require Export listset countable infinite.
 
 Module Type ATOMIC.

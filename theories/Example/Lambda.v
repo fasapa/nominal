@@ -1,4 +1,4 @@
-From Coq Require Import Lists.List.
+From Stdlib Require Import Lists.List.
 From Nominal Require Export Nominal Fresh NameAbstraction FreshnessTheorem.
 From Nominal.Instances Require Export SupportedFunctions Name Prod Perm.
 
