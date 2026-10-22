@@ -13,19 +13,19 @@ Lemma perm_swap_app (r s: Perm) a: perm_swap (r ++ s) a = perm_swap s (perm_swap
 Proof. unfold perm_swap; rewrite foldl_app; simpl; auto. Qed.
 
 Lemma perm_swap_left_rev (p: Perm): ∀ a, perm_swap (reverse p) (perm_swap p a) = a.
-Proof with auto.
-  assert (HH: ∀ {A} (x: A) y, x :: y = [x] ++ y)... induction p; intros.
-  - simpl...
+Proof.
+  assert (HH: ∀ {A} (x: A) y, x :: y = [x] ++ y); auto. induction p; intros.
+  - simpl; auto.
   - rewrite HH, reverse_app, reverse_singleton, <-perm_swap_app, <-app_assoc,
       3?perm_swap_app; simpl; rewrite IHp; apply swap_involutive.
 Qed.
 
 Lemma perm_swap_right_rev (p : Perm) a: perm_swap p (perm_swap (reverse p) a) = a.
-Proof with auto.
-  assert (HH: ∀ {A} (x: A) y, x :: y = [x] ++ y)... induction p.
-  - simpl...
+Proof.
+  assert (HH: ∀ {A} (x: A) y, x :: y = [x] ++ y); auto. induction p.
+  - simpl; auto.
   - rewrite HH, reverse_app, reverse_singleton, <- perm_swap_app, <-app_assoc, 
-      3?perm_swap_app; simpl; rewrite swap_involutive...
+      3?perm_swap_app; simpl; rewrite swap_involutive; auto.
 Qed.
 
 Lemma perm_swap_neither (a b c: Name): a ≠ b → a ≠ c → perm_swap ⟨b,c⟩ a = a.
@@ -78,17 +78,17 @@ Qed.
 Proof. repeat split; repeat intro; [symmetry | etransitivity]; eauto. Qed.
 
 #[export] Instance PermGrp: Group Perm.
-Proof with auto.
+Proof.
   split; unfold op, perm_operator, neutral, perm_neutral, inv, perm_inverse,
-         equiv, perm_equiv in *; repeat intro...
+         equiv, perm_equiv in *; repeat intro; auto.
   - typeclasses eauto.
-  - rewrite 2?perm_swap_app; do 2 match goal with H : context[_ = _] |- _ => rewrite H end...
+  - rewrite 2?perm_swap_app; do 2 match goal with H : context[_ = _] |- _ => rewrite H end; auto.
   - transitivity (perm_swap (reverse y) (perm_swap x (perm_swap (reverse x) a)));
-    [rewrite H, perm_swap_left_rev | rewrite perm_swap_right_rev]...
-  - rewrite app_assoc...
-  - rewrite app_nil_r...
-  - rewrite perm_swap_app, perm_swap_right_rev...
-  - rewrite perm_swap_app, perm_swap_left_rev...
+    [rewrite H, perm_swap_left_rev | rewrite perm_swap_right_rev]; auto.
+  - rewrite app_assoc; auto.
+  - rewrite app_nil_r; auto.
+  - rewrite perm_swap_app, perm_swap_right_rev; auto.
+  - rewrite perm_swap_app, perm_swap_left_rev; auto.
 Qed.
 
 (* PermGroup Properties *)

@@ -49,14 +49,14 @@ Section Properties.
 Context `{Group G}.
 
 Lemma grp_inv_involutive (x: G): -(-x) ≡ x.
-    Proof with auto.
+    Proof.
       rewrite <-(grp_left_id x) at 2;
-       rewrite <-grp_left_inv, <-grp_assoc, grp_left_inv, grp_right_id...
+       rewrite <-grp_left_inv, <-grp_assoc, grp_left_inv, grp_right_id; auto.
     Qed.
 
     Corollary grp_inv_neutral: -ɛ ≡@{G} ɛ.
-    Proof with auto.
-      rewrite <-grp_left_inv at 1; rewrite grp_right_id, grp_inv_involutive...
+    Proof.
+      rewrite <-grp_left_inv at 1; rewrite grp_right_id, grp_inv_involutive; auto.
     Qed.
 
     Corollary grp_inv_inj (x y: G): x ≡ y → (-x) ≡ (-y).
