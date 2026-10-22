@@ -1,13 +1,3 @@
--arg -w
--arg all
--arg -w
--arg -disj-pattern-notation # TODO FIX
--arg -w
--arg -future-coercion-class-field # TODO FIX
--arg -w
--arg -summary-out-of-scope # TODO FIX
--arg -w
--arg -stdlib-vector # TODO FIX
 
 -R theories/ Nominal
 
