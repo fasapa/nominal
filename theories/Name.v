@@ -22,7 +22,7 @@ Module Atom : ATOMIC.
 End Atom.
 #[export] Existing Instances Atom.dec Atom.inf.
 
-Notation Name := Atom.t.
+Abbreviation Name := Atom.t.
 
 (* Finite set of names *)
 Definition NameSet := (listset Name).
