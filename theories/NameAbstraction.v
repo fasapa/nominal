@@ -4,8 +4,8 @@ From Nominal.Instances Require Import Name Prod Perm.
 
 #[universes(template=no),projections(primitive=yes)]
 Record NameAbstraction `{Nominal X} := mkAbstraction { name: Name; term: X }.
-Arguments NameAbstraction _ {_ _ _ _}.
-Arguments mkAbstraction {_ _ _ _ _} _.
+Arguments NameAbstraction _ {_ _ _ _ _}.
+Arguments mkAbstraction {_ _ _ _ _ _} _.
 Notation " '[𝔸]' X " := (NameAbstraction X) (at level 1, no associativity, format "[𝔸] X").
 Notation " ⟦ a ⟧ x " := ({| name := a; term := x |}) (at level 1, no associativity, format "⟦ a ⟧ x").
 
@@ -40,7 +40,7 @@ Proof.
 Qed.
 
 (* Alpha relation is an equivalence. *)
-#[export] Instance alpha_equivalence_e `{Nominal X}: Equivalence (@alpha_equiv_e X _ _ _ _).
+#[export] Instance alpha_equivalence_e `{Nominal X}: Equivalence (@alpha_equiv_e X _ _ _ _ _).
 Proof.
     split.
     - intros [a x]; destruct (exist_fresh (support a ∪ support x)) as [y []%not_elem_of_union];
@@ -51,7 +51,7 @@ Proof.
             [| rewrite (A f), (A' f)]; intuition. 
 Qed.
 
-#[export] Instance alpha_equivalence_a `{Nominal X}: Equivalence (@alpha_equiv_a X _ _ _ _).
+#[export] Instance alpha_equivalence_a `{Nominal X}: Equivalence (@alpha_equiv_a X _ _ _ _ _).
 Proof.
     split.
     - intros [] ? ?; simpl; reflexivity.
@@ -165,8 +165,7 @@ Proof.
 Qed.
 
 #[export] Instance name_abstraction_nominal `{Nominal X}: Nominal [𝔸]X.
-Proof. split.
-    - exact name_abstraction_perm.
+Proof.
     - intros x a b ? ?; destruct (decide (a = b)), (decide (a = x.(name))), (decide (b = x.(name)));
           try (subst; congruence || subst; apply perm_action_equal); unfold support, name_abstraction_support in *; simpl in *.
         + subst; apply not_elem_of_difference in H1 as []; apply not_elem_of_difference in H2 as [].   (* subst. apply support_fresh in H1. as [?%name_neq_fresh_iff ?]. congruence. *)
@@ -254,16 +253,16 @@ Lemma fresh_nabs `{Nominal X} (a a': Name) (x: X):
 Proof. split; [apply fresh_nabs_left | apply fresh_nabs_right]. Qed.
 
 #[global] Instance name_abstraction_proper `{Nominal X}: 
-    Proper (equiv ==> equiv ==> (@name_abstraction_equiv X _ _ _ _)) mkAbstraction.
+    Proper (equiv ==> equiv ==> (@name_abstraction_equiv X _ _ _ _ _)) mkAbstraction.
 Proof. repeat intro; unfold name_abstraction_equiv; simpl; rewrite H1; apply alpha_inv_name_equiv_iff; assumption. Qed.
 
 
 #[global] Instance name_abstraction_rw1 `{Nominal X}: 
-    ∀ a, Proper (equiv ==> (@name_abstraction_equiv X _ _ _ _)) (mkAbstraction a).
+    ∀ a, Proper (equiv ==> (@name_abstraction_equiv X _ _ _ _ _)) (mkAbstraction a).
 Proof. repeat intro. unfold name_abstraction_equiv; apply alpha_inv_name_equiv_iff; auto. Qed.
 
 #[global] Instance name_abstraction_rw2 `{Nominal X}: 
-    Proper ((@name_abstraction_equiv X _ _ _ _) ==> (@name_abstraction_equiv X _ _ _ _) ==> flip impl) equiv.
+    Proper ((@name_abstraction_equiv X _ _ _ _ _) ==> (@name_abstraction_equiv X _ _ _ _ _) ==> flip impl) equiv.
 Proof.
     repeat intro. unfold name_abstraction_equiv in *.
     pose proof (@Equivalence_Transitive _ _ alpha_equivalence_e) as T.
@@ -272,7 +271,7 @@ Proof.
 Qed.
 
 #[global] Instance name_abstraction_rw3 `{Nominal X}: 
-    ∀ a (x : X), ProperProxy (@name_abstraction_equiv X _ _ _ _) ⟦a⟧x.
+    ∀ a (x : X), ProperProxy (@name_abstraction_equiv X _ _ _ _ _) ⟦a⟧x.
 Proof. 
     unfold ProperProxy,name_abstraction_equiv; repeat intro.
     pose proof (@Equivalence_Reflexive _ _ alpha_equivalence_e) as F.

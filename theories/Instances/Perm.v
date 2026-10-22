@@ -22,13 +22,12 @@ Proof. split.
 Qed.
 
 #[export] Instance PermNominal: Nominal Perm.
-Proof. split.
-  - apply PermPermT.
-  - intros x a b Ha Hb. unfold action, PermActionPerm.
-    rewrite <-(perm_inv a b), !grp_assoc. rewrite perm_notin_dom_comm.
-    + rewrite <-grp_assoc, perm_duplicate, grp_right_id. reflexivity.
-    + assumption.
-    + assumption.
+Proof.
+  intros x a b Ha Hb. unfold action, PermActionPerm.
+  rewrite <-(perm_inv a b), !grp_assoc. rewrite perm_notin_dom_comm.
+  - rewrite <-grp_assoc, perm_duplicate, grp_right_id. reflexivity.
+  - assumption.
+  - assumption.
 Qed.
 
 Lemma perm_distr w z (p q: Perm): ⟨w,z⟩ • (p + q) ≡ (⟨w,z⟩ • p) + (⟨w,z⟩ • q).

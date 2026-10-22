@@ -67,7 +67,6 @@ Lemma some_any_iff `{Nominal X} (a: Name) (x: X): a # x ↔ a #ₐ x.
 Proof.
   split.
   - intros [b [SB HH]] c SC; destruct (decide (c = a)), (decide (c = b)); subst; auto.
-    + apply perm_action_equal.
     + rewrite perm_expand with (b := b); try rewrite <-2!gact_compat, HH, (support_spec _ b c); auto.
   - intros HH; exists (fresh (support x)); split.
     + apply is_fresh.

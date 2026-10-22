@@ -209,9 +209,7 @@ Instance TermSupport : Support Λ := fv.
 
 Instance TermNominal : Nominal Λ.
 Proof.
-  split.
-  - exact TermPermT.
-  - induction x; intros.
+  - red; induction x; intros.
     + rewrite term_perm_var, fresh_fixpoint; try apply support_fresh; set_solver.
     + rewrite term_perm_app; constructor; set_solver.
     + rewrite term_perm_abs; destruct (decide (a = b)); subst.

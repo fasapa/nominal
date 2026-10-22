@@ -78,10 +78,8 @@ Section FunSuppProperties.
 
     #[global] Instance fun_supp_nominal: Nominal (X →ₛ Y).
     Proof.
-      split.
-      - apply fun_supp_perm.
-      - intros f ? ? ? x; unfold support, fun_supp_support, action, fun_supp_act, equiv, fun_supp_equiv in *;
-        simpl; intros; rewrite <-perm_inv; apply f_supp_spec; assumption.
+      intros f ? ? ? x; unfold support, fun_supp_support, action, fun_supp_act, equiv, fun_supp_equiv in *;
+      simpl; intros; rewrite <-perm_inv; apply f_supp_spec; assumption.
     Qed.
 End FunSuppProperties.
 

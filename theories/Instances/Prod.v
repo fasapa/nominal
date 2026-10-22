@@ -23,9 +23,7 @@ Section ProdNominal.
 
     #[export] Instance prod_nominal: Nominal (X * Y).
     Proof.
-        split.
-        - exact prod_perm.
-        - intros [] ? ? ? ?; unfold action, prod_action, equiv, prod_equiv, prod_relation, 
+        red; intros [] ? ? ? ?; unfold action, prod_action, equiv, prod_equiv, prod_relation, 
             support, prod_support in *;
             simpl; split; apply support_spec; set_solver.
     Qed. 

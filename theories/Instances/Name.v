@@ -16,10 +16,7 @@ Qed.
 
 #[export] Instance name_nominal: Nominal Name.
 Proof. 
-    split; intros; 
-        [apply name_perm | 
-         apply swap_neither1; apply (not_elem_of_singleton (C := NameSet))]; 
-    auto.
+  red; intros; apply swap_neither1; apply (not_elem_of_singleton (C := NameSet)); auto.
 Qed.
 
 Lemma union_empty (A : NameSet) : A ≡ A ∪ ∅.

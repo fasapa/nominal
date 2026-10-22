@@ -12,9 +12,7 @@ Qed.
 
 #[export] Instance nat_nominal: Nominal nat.
 Proof. 
-    split; intros.
-    - apply nat_perm.
-    - reflexivity.
+  easy.
 Qed.
 
 Lemma perm_nat: ∀ (p: Perm) (n: nat), p • n = n.
