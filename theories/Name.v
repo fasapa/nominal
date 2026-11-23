@@ -1,5 +1,5 @@
 From Nominal Require Export Prelude.
-From Coq Require Import Arith.Peano_dec.
+From Stdlib Require Import Arith.Peano_dec.
 From stdpp Require Export listset countable infinite.
 
 Module Type ATOMIC.
@@ -22,7 +22,7 @@ Module Atom : ATOMIC.
 End Atom.
 #[export] Existing Instances Atom.dec Atom.inf.
 
-Notation Name := Atom.t.
+Abbreviation Name := Atom.t.
 
 (* Finite set of names *)
 Definition NameSet := (listset Name).

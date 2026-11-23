@@ -48,25 +48,25 @@ Section Subs.
     Definition subst := alpha_rec (support a ∪ support N) fvar fapp flam ltac:(set_solver) ltac:(set_solver) ltac:(set_solver) flam_fcb.
 End Subs.
 
-Notation " '[' a ':=' N ']' M " := (subst a N M) (at level 59, M at next level, format "[ a  :=  N ] M").
+Notation "M [ a ':=' N ]" := (subst a N M) (at level 1, format "M [ a := N ]").
 
-Lemma subst_var (a b: Name) (m: Λ): [a := m](Var b) ≡ (if decide (a = b) then m else Var b).
+Lemma subst_var (a b: Name) (m: Λ): (Var b)[a := m] ≡ (if decide (a = b) then m else Var b).
 Proof. unfold subst; rewrite alpha_rec_var; unfold fvar; simpl; reflexivity. Qed.
 
-Lemma subst_app (a: Name) (m n t: Λ): [a := t](App m n) ≡ App ([a := t]m) ([a := t]n).
+Lemma subst_app (a: Name) (m n t: Λ): (App m n)[a := t] ≡ App (m[a := t]) (n[a := t]).
 Proof. unfold subst; rewrite alpha_rec_app; unfold fapp; simpl; reflexivity. Qed.
 
-Lemma subst_lam (a b: Name) (m n: Λ): a ≠ b → a ∉ support n → [b := n](Lam a m) ≡ Lam a ([b := n]m).
+Lemma subst_lam (a b: Name) (m n: Λ): a ≠ b → a ∉ support n → (Lam a m)[b := n] ≡ Lam a (m[b := n]).
 Proof. 
- intros; assert (HH: Lam a ([b := n]m) ≡ flam(a, ([b := n]m))). { simpl; reflexivity. }
+ intros; assert (HH: Lam a (m[b := n]) ≡ flam(a, (m[b := n]))). { simpl; reflexivity. }
  rewrite HH; clear HH; unfold subst; apply alpha_rec_lam. apply not_elem_of_union; split; set_solver.
 Qed.
 
 Opaque subst.
 
-Lemma subst_aeq (a: Name) (m p q: Λ): p ≡ q → [a := p]m ≡ [a := q]m.
+Lemma subst_aeq (a: Name) (m p q: Λ): p ≡ q → m[a := p] ≡ m[a := q].
 Proof.
-   intros; generalize dependent m; set (P := fun t => [a := p]t ≡ [a := q]t).
+   intros; generalize dependent m; set (P := fun t => t[a := p] ≡ t[a := q]).
    apply (alpha_ind (support a ∪ support p ∪ support q) P); subst P; intros; simpl in *.
    - unfold αCompat; intros; rewrite <-H0; auto.
    - rewrite !subst_var; destruct (decide _); auto.
@@ -74,9 +74,9 @@ Proof.
    - rewrite !subst_lam; [rewrite H1 | | | |]; set_solver.
 Qed.
 
-Lemma subst_neq_var (a: Name) (m n: Λ): a # m → [a := n]m ≡ m.
+Lemma subst_neq_var (a: Name) (m n: Λ): a # m → m[a := n] ≡ m.
 Proof.
-   generalize dependent m; set (P := fun t => a # t → [a := n]t ≡ t). apply (alpha_ind (support a ∪ support n) P); subst P; simpl in *.
+   generalize dependent m; set (P := fun t => a # t → t[a := n] ≡ t). apply (alpha_ind (support a ∪ support n) P); subst P; simpl in *.
    - repeat intro; rewrite <-H; apply H0; rewrite H; auto. 
    - intros b H; rewrite subst_var; apply var_fresh in H; destruct (decide _); subst; try congruence; reflexivity.
    - simpl in *; intros p q ? ? ?; apply app_fresh in H1 as []; rewrite subst_app; rewrite H,H0; auto.
@@ -85,10 +85,10 @@ Proof.
 Qed.
 
 Lemma subst_comp (a b: Name) (m p q: Λ): 
-   a ≠ b → a ∉ fv p → [b := p]([a := q]m) ≡ [a := ([b := p]q)]([b := p]m).
+   a ≠ b → a ∉ fv p → (m[a := q])[b := p] ≡ (m[b := p])[a := (q[b := p])].
 Proof.
-   intros; generalize dependent m; set (P := fun t => [b := p]([a := q]t) ≡ [a := [b := p]q]([b := p]t)).
-   apply (alpha_ind (support a ∪ support b ∪ support p ∪ support q ∪ support ([b := p]q)) P); subst P; simpl in *.
+   intros; generalize dependent m; set (P := fun t => (t[a := q])[b := p] ≡ (t[b := p])[a := q[b := p]]).
+   apply (alpha_ind (support a ∪ support b ∪ support p ∪ support q ∪ support (q[b := p])) P); subst P; simpl in *.
    - unfold αCompat; intros; rewrite <-H1; assumption.
    - intros c; destruct (decide (a = c)), (decide (b = c)); subst; try congruence;
       repeat (rewrite !subst_var; repeat destruct (decide _); subst; try congruence); auto.

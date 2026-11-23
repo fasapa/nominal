@@ -13,7 +13,7 @@ Qed.
 
 #[export] Instance bool_nominal: Nominal bool.
 Proof. 
-    split; intros; [apply bool_permT | unfold action,bool_action; reflexivity].
+  easy.
 Qed.
 
 Section Properties.

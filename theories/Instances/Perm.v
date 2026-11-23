@@ -22,13 +22,12 @@ Proof. split.
 Qed.
 
 #[export] Instance PermNominal: Nominal Perm.
-Proof. split.
-  - apply PermPermT.
-  - intros x a b Ha Hb. unfold action, PermActionPerm.
-    rewrite <-(perm_inv a b), !grp_assoc. rewrite perm_notin_dom_comm.
-    + rewrite <-grp_assoc, perm_duplicate, grp_right_id. reflexivity.
-    + assumption.
-    + assumption.
+Proof.
+  intros x a b Ha Hb. unfold action, PermActionPerm.
+  rewrite <-(perm_inv a b), !grp_assoc. rewrite perm_notin_dom_comm.
+  - rewrite <-grp_assoc, perm_duplicate, grp_right_id. reflexivity.
+  - assumption.
+  - assumption.
 Qed.
 
 Lemma perm_distr w z (p q: Perm): ⟨w,z⟩ • (p + q) ≡ (⟨w,z⟩ • p) + (⟨w,z⟩ • q).
@@ -65,7 +64,7 @@ Proof.
   rewrite !grp_assoc,grp_left_inv,grp_left_id; reflexivity.
 Qed.
 
-Lemma notin_support_comp_perm (a: Name) (p q : Perm): a ∉ support (p + q) ↔ a ∉ support p ∧ a ∉ support q.
+Lemma notin_support_comp_perm (a: Name) (p q : Perm): a ∉ support (p + q) ↔ (a ∉ support p) ∧ (a ∉ support q).
 Proof.
   split.
   - intros H1; unfold support,PermSupport,op,perm_operator in H1; rewrite perm_dom_concat in H1.
@@ -74,7 +73,7 @@ Proof.
     apply not_elem_of_union; assumption.
 Qed.
 
-Lemma notin_support_comp_swap (c a b: Name) : c ∉ support ⟨a,b⟩ ↔ c ∉ support a ∧ c ∉ support b.
+Lemma notin_support_comp_swap (c a b: Name) : c ∉ support ⟨a,b⟩ ↔ (c ∉ support a) ∧ (c ∉ support b).
 Proof.
   split.
   - intros H1; unfold support in H1; simpl in H1; split; set_solver.
