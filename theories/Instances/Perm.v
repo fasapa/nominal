@@ -64,7 +64,7 @@ Proof.
   rewrite !grp_assoc,grp_left_inv,grp_left_id; reflexivity.
 Qed.
 
-Lemma notin_support_comp_perm (a: Name) (p q : Perm): a ∉ support (p + q) ↔ a ∉ support p ∧ a ∉ support q.
+Lemma notin_support_comp_perm (a: Name) (p q : Perm): a ∉ support (p + q) ↔ (a ∉ support p) ∧ (a ∉ support q).
 Proof.
   split.
   - intros H1; unfold support,PermSupport,op,perm_operator in H1; rewrite perm_dom_concat in H1.
@@ -73,7 +73,7 @@ Proof.
     apply not_elem_of_union; assumption.
 Qed.
 
-Lemma notin_support_comp_swap (c a b: Name) : c ∉ support ⟨a,b⟩ ↔ c ∉ support a ∧ c ∉ support b.
+Lemma notin_support_comp_swap (c a b: Name) : c ∉ support ⟨a,b⟩ ↔ (c ∉ support a) ∧ (c ∉ support b).
 Proof.
   split.
   - intros H1; unfold support in H1; simpl in H1; split; set_solver.

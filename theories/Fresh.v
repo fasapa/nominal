@@ -6,7 +6,7 @@ From Nominal Require Import Nominal.
   new_fixpoint: ⟨a,new⟩ • x ≡@{X} x
 }. *)
 
-Definition freshP_e `{Nominal X} (a: Name) (x: X) := ∃ (b: Name), b ∉ (support x) ∧ ⟨a,b⟩ • x ≡@{X} x.
+Definition freshP_e `{Nominal X} (a: Name) (x: X) := ∃ (b: Name), (b ∉ support x) ∧ ⟨a,b⟩ • x ≡@{X} x.
 Definition freshP_a `{Nominal X} (a: Name) (x: X) := ∀ (b: Name), b ∉ support x → ⟨a,b⟩ • x ≡@{X} x.
 
 (* Infix "#" := freshT (at level 50). *)
@@ -14,9 +14,9 @@ Definition freshP_a `{Nominal X} (a: Name) (x: X) := ∀ (b: Name), b ∉ suppor
 Infix "#" := freshP_e (at level 50).
 Notation "(#)" := (freshP_e) (only parsing).
 Notation "( a #)" := (freshP_e a) (only parsing).
-Notation "a #[ x , y ]" := (a # x ∧ a # y) (at level 50).
-Notation "a #[ x , y , z ]" := (a # x ∧ a # y ∧ a # z) (at level 50).
-Notation "a #[ x , y , z , w ]" := (a # x ∧ a # y ∧ a # z ∧ a # w) (at level 50).
+Notation "a #[ x , y ]" := (a # x ∧ a # y) (at level 1).
+Notation "a #[ x , y , z ]" := (a # x ∧ a # y ∧ a # z) (at level 1).
+Notation "a #[ x , y , z , w ]" := (a # x ∧ a # y ∧ a # z ∧ a # w) (at level 1).
 Infix "#ₐ" := freshP_a (at level 50).
 
 Lemma support_fresh `{Nominal X} (a: Name) (x: X): a ∉ support x → a # x.
